@@ -5,3 +5,11 @@ rustbpe/target/
 dev-ignore/
 report.md
 eval_bundle/
+.specstory/
+.vscode/
+archive/
+articles/
+docs/
+repos-for-reference/
+.cursorindexingignore
+README.md
