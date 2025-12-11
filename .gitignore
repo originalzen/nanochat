@@ -15,3 +15,5 @@ repos-for-reference/
 README.md
 .env
 .env.example
+.cursor/
+raw-commit-diffs/
