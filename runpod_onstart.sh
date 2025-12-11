@@ -1,53 +1,71 @@
 #!/bin/bash
 #
-# Runpod Template Startup Script for NanoChat Training
-# Author: originalzen (based on TrelisResearch/nanochat)
+# RunPod Template Startup Script for NanoChat Training
+#
+# This automated setup script is adapted from TrelisResearch/nanochat and configured
+# for the originalzen/nanochat fork, which integrates karpathy/nanochat (latest code)
+# with TrelisResearch enhancements (HuggingFace utilities, RunPod automation).
+#
+# Source: https://github.com/TrelisResearch/nanochat/blob/master/runpod_onstart.sh
 # Fork: https://github.com/originalzen/nanochat
 # Upstream: https://github.com/karpathy/nanochat
 #
-# This script automatically configures the Runpod environment for training nanochat.
-# It clones the repository, installs dependencies, and sets up environment variables.
+# USAGE:
+#   1. Configure RunPod Secrets (see Environment Variables section below)
+#   2. Upload this script as a custom RunPod template startup script
+#   3. Deploy 8x H100 pod → Repo auto-clones → Ready to train
 #
-# Required Runpod Secrets (set in Runpod Console → Secrets):
-#   - HF_TOKEN: HuggingFace token with write permissions
-#   - WANDB_API_KEY: Weights & Biases API key
+# REPRODUCIBILITY:
+#   To use with your own fork:
+#   - Fork this repository on GitHub
+#   - Set GIT_USERNAME secret in RunPod to your GitHub username
+#   - Deploy pod with this template
+#   - Template will clone from YOUR_USERNAME/nanochat automatically
 #
-# Optional Runpod Secrets (for customization):
-#   - GIT_USERNAME: GitHub username (defaults to 'originalzen')
-#   - GIT_USER_NAME: Your full name for git commits
-#   - GIT_USER_EMAIL: Your email for git commits
-#   - GITHUB_PAT: GitHub Personal Access Token (only for private forks)
+# ──────────────────────────────────────────────────────────────────────────────
+# ENVIRONMENT VARIABLES (Set in RunPod Console → Secrets)
+# ──────────────────────────────────────────────────────────────────────────────
 #
-# To use with YOUR fork:
-#   1. Fork https://github.com/originalzen/nanochat
-#   2. Set GIT_USERNAME to your GitHub username in Runpod Secrets
-#   3. Deploy Runpod pod with this template
+# REQUIRED (Training will fail without these):
+#   HF_TOKEN              HuggingFace token with write permissions
+#                         Get from: https://huggingface.co/settings/tokens
 #
+# RECOMMENDED (For monitoring and tracking):
+#   WANDB_API_KEY         Weights & Biases API key for training dashboards
+#                         Get from: https://wandb.ai/authorize
+#
+# OPTIONAL (For customization):
+#   GIT_USERNAME          GitHub username for cloning (default: originalzen)
+#   GIT_USER_NAME         Full name for git commit author
+#   GIT_USER_EMAIL        Email address for git commit author
+#   GITHUB_PAT            Personal Access Token (only needed for private forks)
+#
+# ──────────────────────────────────────────────────────────────────────────────
 
 bash -lc '
 set -euo pipefail
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 0. Environment Variables
+# 0. Environment Variables Setup
 # ──────────────────────────────────────────────────────────────────────────────
 
 export PIP_ROOT_USER_ACTION=ignore
 
-# HuggingFace token (required for training data download)
+# HuggingFace token (required for dataset download and checkpoint upload)
 export HF_TOKEN="${HF_TOKEN:-}"
 export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN:-}"  # Alias for compatibility
 
-# Weights & Biases (recommended for training monitoring)
+# Weights & Biases (recommended for real-time training monitoring)
 export WANDB_API_KEY="${WANDB_API_KEY:-}"
 
-# Git configuration
-GIT_USERNAME="${GIT_USERNAME:-originalzen}"  # Default to originalzen, override in Runpod Secrets
-GIT_USER_NAME="${GIT_USER_NAME:-}"           # For git commit author name
-GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"         # For git commit author email
-GITHUB_PAT="${GITHUB_PAT:-}"                 # Only needed for private forks
+# Git configuration for repository cloning and commits
+GIT_USERNAME="${GIT_USERNAME:-originalzen}"    # GitHub username (defaults to originalzen)
+GIT_USER_NAME="${GIT_USER_NAME:-}"             # Git commit author name (optional)
+GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"           # Git commit author email (optional)
+GITHUB_PAT="${GITHUB_PAT:-}"                   # Personal Access Token (only for private forks)
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 1. System Packages
+# 1. System Dependencies Installation
 # ──────────────────────────────────────────────────────────────────────────────
 
 echo "==> Installing system dependencies..."
@@ -61,7 +79,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
   wget unzip
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 2. Git Identity (optional, for making commits)
+# 2. Git Identity Configuration (Optional)
 # ──────────────────────────────────────────────────────────────────────────────
 
 if [ -n "${GIT_USER_NAME}" ]; then
@@ -75,7 +93,7 @@ if [ -n "${GIT_USER_EMAIL}" ]; then
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 3. Clone Repository
+# 3. Repository Cloning
 # ──────────────────────────────────────────────────────────────────────────────
 
 cd /workspace
@@ -88,10 +106,10 @@ if [ -d nanochat/.git ]; then
 else
   echo "==> Cloning nanochat from ${REPO_URL}..."
   if [ -n "${GITHUB_PAT}" ]; then
-    # Authenticated clone (required for private repos)
+    # Authenticated clone (required for private repositories)
     git clone "https://${GITHUB_PAT}@github.com/${GIT_USERNAME}/nanochat.git"
   else
-    # Unauthenticated clone (public repos)
+    # Unauthenticated clone (public repositories)
     git clone "${REPO_URL}"
   fi
 fi
@@ -99,43 +117,57 @@ fi
 cd nanochat
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 4. Verify Critical Files (Trelis HF scripts should already be in your fork)
+# 4. Verify Critical Files (HuggingFace Scripts from TrelisResearch)
 # ──────────────────────────────────────────────────────────────────────────────
 
 if [ ! -f "scripts/push_to_hf.py" ] || [ ! -f "scripts/pull_from_hf.py" ]; then
-  echo "WARNING: Trelis HF scripts not found!"
-  echo "Your fork should include push_to_hf.py and pull_from_hf.py"
-  echo "Training will work, but you won't be able to easily push to HuggingFace."
-  echo "Run these commands manually after SSH:"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "WARNING: HuggingFace utility scripts not found in repository!"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Expected files: scripts/push_to_hf.py, scripts/pull_from_hf.py"
+  echo ""
+  echo "These scripts enable checkpoint backup to HuggingFace Hub after training."
+  echo "Training will complete successfully, but you will need to manually backup"
+  echo "checkpoints before terminating the pod."
+  echo ""
+  echo "To add these scripts manually after SSH:"
+  echo "  cd /workspace/nanochat"
   echo "  curl -o scripts/push_to_hf.py https://raw.githubusercontent.com/TrelisResearch/nanochat/master/scripts/push_to_hf.py"
   echo "  curl -o scripts/pull_from_hf.py https://raw.githubusercontent.com/TrelisResearch/nanochat/master/scripts/pull_from_hf.py"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 5. Environment Summary
+# 5. Environment Ready Summary
 # ──────────────────────────────────────────────────────────────────────────────
 
 echo ""
-echo "========================================="
-echo "NanoChat Environment Ready!"
-echo "========================================="
-echo "Repository: ${GIT_USERNAME}/nanochat"
-echo "Location: /workspace/nanochat"
-echo "HF_TOKEN: ${HF_TOKEN:+✅ SET}${HF_TOKEN:-❌ NOT SET}"
-echo "WANDB_API_KEY: ${WANDB_API_KEY:+✅ SET}${WANDB_API_KEY:-⚪ NOT SET}"
-echo "========================================="
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  NanoChat Environment Ready"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "To start training, run:"
+echo "  Repository: ${GIT_USERNAME}/nanochat"
+echo "  Location: /workspace/nanochat"
+echo "  HF_TOKEN: ${HF_TOKEN:+✅ SET}${HF_TOKEN:-❌ NOT SET (REQUIRED)}"
+echo "  WANDB_API_KEY: ${WANDB_API_KEY:+✅ SET}${WANDB_API_KEY:-⚪ NOT SET (OPTIONAL)}"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "To start training (~4 hours, ~\$100):"
+echo ""
 echo "  cd /workspace/nanochat"
 echo "  export WANDB_RUN=my_run_name"
 echo "  screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh"
 echo ""
-echo "To detach from screen: Ctrl+A, then D"
-echo "To reattach: screen -r speedrun"
-echo "To view logs: tail -f speedrun.log"
-echo "========================================="
+echo "Screen commands:"
+echo "  - Detach from session: Ctrl+A, then D"
+echo "  - Reattach to session: screen -r speedrun"
+echo "  - Monitor logs: tail -f speedrun.log"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Continue with standard Runpod startup
+# Continue with standard RunPod startup
 exec /start.sh
 '
-
