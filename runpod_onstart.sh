@@ -1,18 +1,18 @@
 #!/bin/bash
 #
-# RunPod Template Startup Script for NanoChat Training
+# Runpod Template Startup Script for NanoChat Training
 # Author: originalzen (based on TrelisResearch/nanochat)
 # Fork: https://github.com/originalzen/nanochat
 # Upstream: https://github.com/karpathy/nanochat
 #
-# This script automatically configures the RunPod environment for training nanochat.
+# This script automatically configures the Runpod environment for training nanochat.
 # It clones the repository, installs dependencies, and sets up environment variables.
 #
-# Required RunPod Secrets (set in RunPod Console → Secrets):
+# Required Runpod Secrets (set in Runpod Console → Secrets):
 #   - HF_TOKEN: HuggingFace token with write permissions
 #   - WANDB_API_KEY: Weights & Biases API key
 #
-# Optional RunPod Secrets (for customization):
+# Optional Runpod Secrets (for customization):
 #   - GIT_USERNAME: GitHub username (defaults to 'originalzen')
 #   - GIT_USER_NAME: Your full name for git commits
 #   - GIT_USER_EMAIL: Your email for git commits
@@ -20,8 +20,8 @@
 #
 # To use with YOUR fork:
 #   1. Fork https://github.com/originalzen/nanochat
-#   2. Set GIT_USERNAME to your GitHub username in RunPod Secrets
-#   3. Deploy RunPod pod with this template
+#   2. Set GIT_USERNAME to your GitHub username in Runpod Secrets
+#   3. Deploy Runpod pod with this template
 #
 
 bash -lc '
@@ -41,7 +41,7 @@ export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN:-}"  # Alias for compatibility
 export WANDB_API_KEY="${WANDB_API_KEY:-}"
 
 # Git configuration
-GIT_USERNAME="${GIT_USERNAME:-originalzen}"  # Default to originalzen, override in RunPod Secrets
+GIT_USERNAME="${GIT_USERNAME:-originalzen}"  # Default to originalzen, override in Runpod Secrets
 GIT_USER_NAME="${GIT_USER_NAME:-}"           # For git commit author name
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"         # For git commit author email
 GITHUB_PAT="${GITHUB_PAT:-}"                 # Only needed for private forks
@@ -135,7 +135,7 @@ echo "To reattach: screen -r speedrun"
 echo "To view logs: tail -f speedrun.log"
 echo "========================================="
 
-# Continue with standard RunPod startup
+# Continue with standard Runpod startup
 exec /start.sh
 '
 
