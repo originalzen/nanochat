@@ -13,3 +13,5 @@ docs/
 repos-for-reference/
 .cursorindexingignore
 README.md
+.env
+.env.example
