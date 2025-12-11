@@ -12,8 +12,7 @@ articles/
 docs/
 repos-for-reference/
 .cursorindexingignore
-README.md
+DOCS_INDEX.md
 .env
-.env.example
 .cursor/
 raw-commit-diffs/
