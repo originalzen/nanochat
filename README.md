@@ -117,6 +117,7 @@ Access at: `https://<your-pod-id>-8000.proxy.runpod.net`
 | **Report** | ~50KB | Training metrics & benchmarks | 🟡 RECOMMENDED |
 | **Base checkpoint** | ~2GB | Custom fine-tuning, experiments | 🟡 RECOMMENDED |
 | **Mid checkpoint** | ~2GB | Research, stage comparison | 🟡 RECOMMENDED |
+| **Training logs** | ~10MB | speedrun.log (debugging, learning) | ⚪ OPTIONAL |
 
 **Complete backup (RECOMMENDED - backs up ALL artifacts):**
 
@@ -144,20 +145,69 @@ python -m scripts.push_to_hf --stage sft --repo-id YourUsername/my-nanochat --pa
 python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
 ```
 
-**Verify:** Visit `https://huggingface.co/YourUsername/my-nanochat` to confirm uploads
+**Verify HuggingFace uploads:** Visit `https://huggingface.co/YourUsername/my-nanochat` to confirm all folders exist
 
-**Note:** HuggingFace storage is FREE for public models. Back up everything - you can always delete later!
+#### Download Training Logs (Local Backup)
+
+**⚠️ Do NOT upload logs to HuggingFace** (may contain sensitive info like directory paths, usernames)
+
+**Download to your local machine:**
+
+**Option 1: SCP (Command Line)**
+
+```bash
+# On your local machine (PowerShell, WSL, or Mac/Linux terminal)
+# Get SSH details from Runpod pod → Connect → SSH
+
+# Download speedrun.log
+scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/speedrun.log ./
+
+# Download report.md (if not uploaded to HF)
+scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/report.md ./
+```
+
+**Option 2: WinSCP (GUI, Windows)**
+
+1. Download [WinSCP](https://winscp.net/)
+2. Connect using SSH details from Runpod
+   - Host: `<pod-id>.proxy.runpod.net`
+   - Port: `22`
+   - Username: `root`
+3. Navigate to `/workspace/nanochat/`
+4. Drag `speedrun.log` to your local machine
+
+**What logs contain:**
+
+- Full training output (loss curves, FLOPS, validation metrics)
+- Tokenizer training details
+- Evaluation results at each stage
+- Timing information
+
+**Security note:** Review logs before sharing publicly - they may contain:
+
+- Directory paths (usually benign)
+- Environment variable names (no values, safe)
+- No API tokens (tokens are never printed to logs)
+
+**Note:** HuggingFace storage is FREE for public models. Back up checkpoints there, logs locally!
 
 ### Step 6: Terminate Pod
 
-**After backup verified:** Terminate pod in Runpod console (billing stops immediately)
+**Before terminating, ensure backups complete:**
+
+- [x] HuggingFace uploads verified (visit your HF repo)
+- [x] Training logs downloaded to local machine (optional)
+- [x] Report.md reviewed and saved
+
+**Then:** Terminate pod in Runpod console → Billing stops immediately
 
 **Why backup all checkpoints?**
 
 - **Future experiments:** Base/Mid checkpoints enable custom fine-tuning without re-training
 - **Resume training:** Checkpoints include optimizer states for continuation (e.g., monthly $100 runs)
 - **Research:** Compare different training stages
-- **FREE storage:** No cost to keep everything on HuggingFace
+- **Educational:** Logs show full training progression for learning
+- **Free storage:** No cost to keep checkpoints on HuggingFace (logs stored locally)
 
 ---
 
