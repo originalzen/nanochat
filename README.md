@@ -10,99 +10,81 @@
 
 **Cost:** ~$100 | **Time:** ~4 hours | **Result:** 500M parameter GPT-2 level chatbot
 
-### Watch Suggested Tutorial Video by Trelis Research
+### Watch Tutorial (Recommended)
 
-Follow along with the comprehensive video guide together with this Quick Start:
+Follow along with this comprehensive video guide by Trelis Research:
 
 [![Train an LLM from Scratch](https://img.youtube.com/vi/qra052AchPE/maxresdefault.jpg)](https://www.youtube.com/watch?v=qra052AchPE)
 
-**[▶️ Watch: Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)** (29 minutes)
+**[▶️ Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)** (29 minutes)
 
-### Prerequisites
-
-**Get your API keys:**
+### Step 1: Get API Keys
 
 1. **HuggingFace Token** (REQUIRED) - [Create token with "Write" permissions](https://huggingface.co/settings/tokens)
 2. **Weights & Biases API Key** (RECOMMENDED) - [Get your API key](https://wandb.ai/authorize)
 
-### Deploy & Train (3 commands)
+### Step 2: Deploy & Configure
 
-**Option A: Use this fork directly**
+**Deploy 8x H100 pod on [RunPod](https://runpod.io):**
+
+- Select: 8x H100 SXM (or PCIe/NVL)
+- Cost: ~$24/hour
+
+**Configure RunPod Secrets:**
+
+- `HF_TOKEN` - Your HuggingFace token (required)
+- `WANDB_API_KEY` - Your W&B key (optional but recommended)
+- `GIT_USERNAME` - Your GitHub username if you forked (optional, defaults to `originalzen`)
+
+### Step 3: Start Training (3 commands)
+
+**SSH into pod and run:**
 
 ```bash
-# 1. Deploy 8x H100 node on Runpod (https://runpod.io)
-# 2. Configure Runpod Secrets:
-#    - HF_TOKEN (your HuggingFace token)
-#    - WANDB_API_KEY (your W&B key)
-
-# 3. SSH into pod and run:
 cd /workspace
 git clone https://github.com/originalzen/nanochat.git
 cd nanochat
 export WANDB_RUN=nanochat_d20
 screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
-
-# 4. Detach from screen: Ctrl+A, then D
-# 5. Monitor: tail -f speedrun.log
-# 6. Come back in 4 hours!
 ```
 
-**Option B: Fork and customize**
+**Then:**
+
+- Detach: `Ctrl+A`, then `D`
+- Monitor: `tail -f speedrun.log`
+- Wait ~4 hours (or watch training on [wandb.ai](https://wandb.ai))
+
+**Using your own fork?** Replace `originalzen` with your GitHub username in clone command above.
+
+### Step 4: Test Your Model (5 minutes)
+
+**After training completes:**
 
 ```bash
-# 1. Fork this repo on GitHub
-# 2. Configure RunPod Secrets:
-#    - HF_TOKEN
-#    - WANDB_API_KEY
-#    - GIT_USERNAME (set to your GitHub username)
-
-# 3. SSH into pod and run:
-cd /workspace
-git clone https://github.com/YOUR_USERNAME/nanochat.git
-cd nanochat
-export WANDB_RUN=nanochat_d20
-screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
-```
-
-### After Training (~30 minutes for backup)
-
-**CRITICAL: Backup BEFORE terminating pod!** Once terminated, all data is lost forever.
-
-#### What Gets Generated During Training
-
-| Artifact | Size | Purpose | Backup Priority |
-|----------|------|---------|-----------------|
-| **SFT checkpoint** | ~2GB | Final chat model (MOST IMPORTANT) | 🔴 CRITICAL |
-| **Tokenizer** | ~1MB | Required for all inference | 🔴 CRITICAL |
-| **Base checkpoint** | ~2GB | Pre-trained model (for research/experiments) | 🟡 RECOMMENDED |
-| **Mid checkpoint** | ~2GB | Chat-tuned model (intermediate stage) | 🟡 RECOMMENDED |
-| **Report** | ~50KB | Training metrics & benchmarks | 🟡 RECOMMENDED |
-| **Training logs** | ~10MB | speedrun.log (debugging/learning) | ⚪ OPTIONAL |
-
-**Total:** ~6-8GB for complete backup | **Minimum:** ~2GB (SFT + tokenizer only)
-
-#### Test Your Model First
-
-```bash
-# Activate environment (if not already active)
 source .venv/bin/activate
 export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
-
-# Start chat interface
 python -m scripts.chat_web
-# Access at: https://<your-pod-id>-8000.proxy.runpod.net
-
-# Test prompts:
-# - "What is the capital of France?"
-# - "Tell me a joke"
-# - "Why is the sky blue?"
-
-# Stop server: Ctrl+C
 ```
 
-#### Backup ALL Checkpoints to HuggingFace
+Access at: `https://<your-pod-id>-8000.proxy.runpod.net`
 
-**Complete backup (recommended for $100 investment):**
+**Test prompts:** "What is the capital of France?", "Tell me a joke", "Why is the sky blue?"
+
+### Step 5: Backup Checkpoints (10-20 minutes)
+
+**⚠️ CRITICAL: Backup BEFORE terminating pod!** All data is lost forever when pod terminates.
+
+**What gets generated (total ~8GB):**
+
+| Artifact | Size | Required For | Priority |
+|----------|------|--------------|----------|
+| **SFT checkpoint** | ~2GB | Chat inference | 🔴 CRITICAL |
+| **Tokenizer** | ~1MB | All inference (text encoding/decoding) | 🔴 CRITICAL |
+| **Report** | ~50KB | Training metrics & benchmarks | 🟡 RECOMMENDED |
+| **Base checkpoint** | ~2GB | Custom fine-tuning, experiments | 🟡 RECOMMENDED |
+| **Mid checkpoint** | ~2GB | Research, stage comparison | 🟡 RECOMMENDED |
+
+**Complete backup (RECOMMENDED - backs up ALL artifacts):**
 
 ```bash
 source .venv/bin/activate
@@ -110,86 +92,38 @@ export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
 
 # Replace YourUsername/my-nanochat with your HuggingFace repo
 
-# 1. SFT checkpoint (CRITICAL - your final chat model)
-python -m scripts.push_to_hf --stage sft \
-  --repo-id YourUsername/my-nanochat --path-in-repo sft/d20
+# Critical (SFT + tokenizer + report)
+python -m scripts.push_to_hf --stage sft --repo-id YourUsername/my-nanochat --path-in-repo sft/d20
+python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
+python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/report" --repo-id YourUsername/my-nanochat --path-in-repo report/latest
 
-# 2. Tokenizer (CRITICAL - required for inference)
-python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" \
-  --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
-
-# 3. Report (RECOMMENDED - training metrics)
-python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/report" \
-  --repo-id YourUsername/my-nanochat --path-in-repo report/latest
-
-# 4. Base checkpoint (OPTIONAL - for experiments)
-python -m scripts.push_to_hf --stage base \
-  --repo-id YourUsername/my-nanochat --path-in-repo base/d20
-
-# 5. Mid checkpoint (OPTIONAL - for research)
-python -m scripts.push_to_hf --stage mid \
-  --repo-id YourUsername/my-nanochat --path-in-repo mid/d20
+# Optional but recommended (base + mid for future experiments)
+python -m scripts.push_to_hf --stage base --repo-id YourUsername/my-nanochat --path-in-repo base/d20
+python -m scripts.push_to_hf --stage mid --repo-id YourUsername/my-nanochat --path-in-repo mid/d20
 ```
 
-**Upload time:** ~10-20 minutes depending on connection speed
-
-**Verify uploads:** Visit `https://huggingface.co/YourUsername/my-nanochat` to confirm all folders exist
-
-#### Minimum Backup (if time-constrained)
+**Minimum backup (time-constrained, ~5 minutes):**
 
 ```bash
-# Just the essentials (SFT + tokenizer, ~2GB, ~5 minutes)
+# Just SFT + tokenizer (~2GB)
 python -m scripts.push_to_hf --stage sft --repo-id YourUsername/my-nanochat --path-in-repo sft/d20
 python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
 ```
 
-**After backup verified:** Terminate your pod (billing stops immediately)
+**Verify:** Visit `https://huggingface.co/YourUsername/my-nanochat` to confirm uploads
 
 **Note:** HuggingFace storage is FREE for public models. Back up everything - you can always delete later!
 
-#### Why Backup Each Checkpoint?
+### Step 6: Terminate Pod
 
-**SFT checkpoint (sft/d20):**
+**After backup verified:** Terminate pod in RunPod console (billing stops immediately)
 
-- Your final chat model - use for inference
-- Required if you want to chat with your model later
-- Can be loaded on local machine or AWS for deployment
+**Why backup all checkpoints?**
 
-**Tokenizer:**
-
-- Absolutely required for ANY inference (encoding/decoding text)
-- Without this, none of your checkpoints are usable
-- Deterministic - if you retrain tokenizer on same data, you get identical result
-
-**Base checkpoint (base/d20):**
-
-- Pre-trained model before chat tuning
-- Useful for: Custom fine-tuning experiments, research, understanding base capabilities
-- Skip if: You only want the chat model
-
-**Mid checkpoint (mid/d20):**
-
-- Intermediate stage (base + chat data, before SFT)
-- Useful for: Comparing training stages, research
-- Skip if: You only want the final model
-
-**Report (report/latest):**
-
-- Training metrics: CORE score, MMLU, GSM8K, HumanEval benchmarks
-- Your model's "report card"
-- Educational value: Compare your results to others
-- Skip if: You don't care about metrics
-
-**Training logs (speedrun.log):**
-
-- Full console output from 4-hour training
-- Useful for: Debugging, learning, sharing experience
-- Not uploadable via push_to_hf.py (download manually if desired)
-- Skip if: You don't need historical record
-
-**Recommendation for $100 run:** Back up ALL checkpoints (~10 minutes, FREE storage). You invested $100 in training - don't risk losing valuable artifacts!
-
-**For future training sessions:** If you want to resume/continue training later (e.g., monthly $100 runs), you'll need the checkpoints which include optimizer states. Without them, you'd have to start from scratch.
+- **Future experiments:** Base/Mid checkpoints enable custom fine-tuning without re-training
+- **Resume training:** Checkpoints include optimizer states for continuation (e.g., monthly $100 runs)
+- **Research:** Compare different training stages
+- **FREE storage:** No cost to keep everything on HuggingFace
 
 ---
 
@@ -207,234 +141,137 @@ This fork integrates convenience enhancements from [TrelisResearch/nanochat](htt
 
 - `scripts/push_to_hf.py` - Upload checkpoints to HuggingFace Hub
 - `scripts/pull_from_hf.py` - Download checkpoints from HuggingFace Hub
-- `runpod_onstart.sh` - Automated Runpod environment setup (adaptation based on the template from TrelisResearch)
-- `hf-transfer` dependency
+- `runpod_onstart.sh` - Automated RunPod environment setup
+- `hf-transfer` + `huggingface-hub` dependencies
 
 ### Why This Fork Exists
 
-TrelisResearch added excellent Runpod integration and HuggingFace utilities, but was missing some upstream bug fixes from Karpathy at the time of forking the repo. This fork merges the best of both:
+TrelisResearch added excellent RunPod integration and HuggingFace utilities, but was missing some upstream bug fixes from Karpathy. This fork merges the best of both:
 
 - Latest updates and bug fixes from Karpathy upstream
-- Convenience scripts from TrelisResearch
-    - Runpod automation template with injection of environment variables/Secrets
-    - Integration with Weights & Biases (`wandb`) for monitoring, tracking, and visualization of training progress
-    - HuggingFace backup/restore workflow
-- Regular upstream sync to stay current with Karpathy's active development
+- Convenience scripts from TrelisResearch (RunPod automation, W&B integration, HF backup workflow)
+- Regular upstream sync to stay current
 
-This fork also exists for me to learn and practice more with `git` and GitHub workflows and of course as a learning tool/opportunity for ML and LLM training and development through tinkering and experimentation. Much thanks and appreciation to Andrej Karpathy for making nanochat open source, accessible to everyone, and to Ronan K. McGovern at Trelis Research for the added scripts and the video tutorial [Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE).
+This fork also serves as a learning tool for git workflows, ML/LLM training, and experimentation. Thanks to Andrej Karpathy for making nanochat accessible to everyone, and to Ronan K. McGovern at Trelis Research for the tutorial and scripts.
 
 ---
 
-## About **nanochat**
+## About nanochat
 
-This repo is a full-stack implementation of an LLM like ChatGPT in a single, clean, minimal, hackable, dependency-lite codebase. nanochat is designed to run on a single 8x H100 node via scripts like [speedrun.sh](speedrun.sh), which run the entire pipeline start to end. This includes tokenization, pretraining, finetuning, evaluation, inference, and web serving over a simple UI so that you can talk to your own LLM just like ChatGPT. nanochat will become the capstone project of the course **LLM101n** being developed by [Eureka Labs](https://eurekalabs.ai).
+This repo is a full-stack implementation of an LLM like ChatGPT in a single, clean, minimal, hackable, dependency-lite codebase. nanochat is designed to run on a single 8x H100 node via scripts like [speedrun.sh](speedrun.sh), running the entire pipeline start to end: tokenization, pretraining, finetuning, evaluation, inference, and web serving. nanochat will become the capstone project of the course **LLM101n** being developed by [Eureka Labs](https://eurekalabs.ai).
 
-### Talk to it
-
-To get a sense of the endpoint of this repo, you can currently find [nanochat d32](https://github.com/karpathy/nanochat/discussions/8) hosted on [nanochat.karpathy.ai](https://nanochat.karpathy.ai/). "d32" means that this model has 32 layers in the Transformer neural network. This model has 1.9 billion parameters, it was trained on 38 billion tokens by simply running the single script [run1000.sh](run1000.sh), and the total cost of training was ~$800 (about 33 hours training time on an 8x H100 GPU node). While today this is enough to outperform GPT-2 of 2019, it falls dramatically short of modern Large Language Models like GPT-5. When talking to these micro models, you'll see that they make a lot of mistakes: they are a little bit naive, silly, and they hallucinate a ton, a bit like children. It's kind of amusing. But what makes nanochat unique is that it is fully yours - fully configurable, tweakable, hackable, and trained by you from start to end.
-
----
-
-## Quick Start
-
-### Standard Setup (Any Cloud Provider)
-
-The fastest way to feel the magic is to run the speedrun script [speedrun.sh](speedrun.sh), which trains the $100 tier nanochat. On an 8x H100 node at ~$24/hr, this gives a total run time of about 4 hours.
-
-```bash
-# Clone this fork
-git clone https://github.com/originalzen/nanochat.git
-cd nanochat
-
-# Run training (use screen for persistence)
-screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
-```
-
-Detach with `Ctrl-A`, then press `D` to detach from the `screen` session. Monitor progress with `tail -f speedrun.log`. After ~4 hours, talk to your LLM via the ChatGPT-like web UI:
-
-```bash
-source .venv/bin/activate
-python -m scripts.chat_web
-```
-
-Then visit the URL shown (e.g., `http://<host-ip>:8000`).
-
-### Runpod Quick Start
-
-For Runpod deployment with automated setup:
-
-**Option 1: Manual Clone (Recommended):**
-
-```bash
-# SSH into your 8x H100 Runpod pod
-cd /workspace
-git clone https://github.com/originalzen/nanochat.git
-cd nanochat
-export WANDB_RUN=nanochat_d20
-screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
-```
-
-**Option 2: Automated Template:**
-
-1. **Configure Runpod Secrets:**
-   - `HF_TOKEN` - HuggingFace token with write permissions (required)
-   - `WANDB_API_KEY` - Weights & Biases API key (recommended)
-   - `GIT_USERNAME` - Your GitHub username (optional, defaults to `originalzen`)
-
-2. **Upload `runpod_onstart.sh` as custom template** (optional)
-
-3. **Deploy 8x H100 pod** → Repo auto-clones → Ready to train
-
-**Training time:** ~4 hours | **Cost:** ~$100 | **Result:** Your own GPT-2 level LLM
-
----
-
-## Backup & Restore Checkpoints
-
-**For post-training backup workflow, see [After Training](#after-training) section in Quick Start above.**
-
-### Complete Backup Reference
-
-This fork includes convenience scripts for checkpoint management (from TrelisResearch):
-
-```bash
-source .venv/bin/activate
-export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
-
-# Upload SFT checkpoint (most important - your final chat model)
-python -m scripts.push_to_hf --stage sft --repo-id YourUsername/nanochat-d20 --path-in-repo sft/d20
-
-# Upload tokenizer (required for inference)
-python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" \
-  --repo-id YourUsername/nanochat-d20 --path-in-repo tokenizer/latest
-
-# Upload training report (metrics and benchmarks)
-python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/report" \
-  --repo-id YourUsername/nanochat-d20 --path-in-repo report/latest
-```
-
-### Download from HuggingFace
-
-```bash
-# Download SFT checkpoint for inference
-python -m scripts.pull_from_hf --repo-id YourUsername/nanochat-d20 \
-  --repo-path sft/d20 --stage sft --target-tag d20
-
-# Download tokenizer
-export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
-python -m scripts.pull_from_hf --repo-id YourUsername/nanochat-d20 \
-  --repo-path tokenizer/latest --dest-dir "$NANOCHAT_BASE_DIR/tokenizer"
-```
-
-Downloads land in `$NANOCHAT_BASE_DIR/{base,mid,chatsft}` by default, so scripts like `chat_web` can find them automatically.
+**Talk to it:** You can try [nanochat d32](https://github.com/karpathy/nanochat/discussions/8) hosted at [nanochat.karpathy.ai](https://nanochat.karpathy.ai/). This 1.9B parameter model was trained for ~$800 (33 hours on 8x H100). While it outperforms GPT-2, it falls short of modern LLMs. These micro models make mistakes, hallucinate, and act childlike - but they're fully yours to configure, tweak, and hack.
 
 ---
 
 ## Training Results
 
-After training completes, view the report card:
+Expected metrics for speedrun (d20 model, ~500M parameters):
 
-```bash
-cat report.md
-```
+| Metric | BASE | MID | SFT |
+|--------|------|-----|-----|
+| CORE | ~0.22 | - | - |
+| ARC-Easy | - | ~0.36 | ~0.39 |
+| GSM8K | - | ~0.03 | ~0.05 |
+| HumanEval | - | ~0.07 | ~0.09 |
+| MMLU | - | ~0.31 | ~0.32 |
 
-Expected metrics for the $100 speedrun (d20 model, ~500M parameters):
+**Training time:** ~3h 47m | View full report: `cat report.md` after training
 
-| Metric          | BASE     | MID      | SFT      |
-|-----------------|----------|----------|----------|
-| CORE            | ~0.2219  | -        | -        |
-| ARC-Challenge   | -        | ~0.2875  | ~0.2807  |
-| ARC-Easy        | -        | ~0.3561  | ~0.3876  |
-| GSM8K           | -        | ~0.0250  | ~0.0455  |
-| HumanEval       | -        | ~0.0671  | ~0.0854  |
-| MMLU            | -        | ~0.3111  | ~0.3151  |
-
-**Total wall clock time:** ~3h 47m
-
-For more details, see Karpathy's walkthrough: [Introducing nanochat: The best ChatGPT that $100 can buy.](https://github.com/karpathy/nanochat/discussions/1)
+See Karpathy's walkthrough: [Introducing nanochat](https://github.com/karpathy/nanochat/discussions/1)
 
 ---
 
-## Using This Fork
+## Advanced Usage
 
-### Fork This Repository
+### Download Pre-Trained Checkpoints
 
-To create your own version:
-
-1. Click "Fork" on GitHub
-2. Clone your fork: `git clone https://github.com/YourUsername/nanochat.git`
-3. (Optional) Update `runpod_onstart.sh` default `GIT_USERNAME` to yours
-4. Deploy and train!
-
-### Stay Synced with Upstream
-
-This fork will regularly pull updates from the upstream `karpathy/nanochat` repository:
+Skip training and use existing checkpoints:
 
 ```bash
-# Add upstream remote (if not already added)
-git remote add upstream https://github.com/karpathy/nanochat.git
+source .venv/bin/activate
+export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
 
-# Sync with latest karpathy changes
-git fetch upstream
-git merge upstream/master
-git push origin master
+# Download SFT model + tokenizer
+python -m scripts.pull_from_hf --repo-id YourUsername/nanochat-d20 \
+  --repo-path sft/d20 --stage sft --target-tag d20
+python -m scripts.pull_from_hf --repo-id YourUsername/nanochat-d20 \
+  --repo-path tokenizer/latest --dest-dir "$NANOCHAT_BASE_DIR/tokenizer"
+
+# Run chat interface
+python -m scripts.chat_web
 ```
 
----
+### Train Bigger Models
 
-## Bigger Models
-
-Unsurprisingly, $100 is not enough to train a highly performant ChatGPT clone. For better performance, consider:
-
-- **~$300 tier (d26):** Trains in ~12 hours, slightly outperforms GPT-2 CORE score
-- **~$1000 tier (d32):** Trains in ~41.6 hours, 1.9B parameters
-
-To train larger models, adjust these parameters in `speedrun.sh`:
+**~$300 tier (d26, 12 hours):** Slightly outperforms GPT-2
 
 ```bash
-# Download more data shards (for d26)
-python -m nanochat.dataset -n 450 &
-
-# Increase model depth and adjust batch size to fit in VRAM
+# In speedrun.sh, modify:
+python -m nanochat.dataset -n 450 &  # More data
 torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- --depth=26 --device_batch_size=16
 torchrun --standalone --nproc_per_node=8 -m scripts.mid_train -- --device_batch_size=16
 ```
 
----
+**~$1000 tier (d32, 41 hours):** 1.9B parameters (like demo at nanochat.karpathy.ai)
 
-## Computing Environments
+### GPU Options & Memory Management
 
 **GPU recommendations:**
 
 - **Best:** 8x H100 SXM (~$24/hr, optimal interconnect)
-- **Alternative:** 8x A100 80GB (slower, may cost more per epoch)
-- **Budget:** Single GPU (significantly slower by at least 8x, but it produces about the same results via gradient accumulation)
+- **Alternative:** 8x A100 80GB (slower, may cost more overall)
+- **Budget:** Single GPU (8x slower, but same results via gradient accumulation)
 
 **Memory management:**
 
 - GPUs with <80GB VRAM: Reduce `--device_batch_size` from `32` to `16`, `8`, `4`, or `2`
 - Scripts automatically compensate with gradient accumulation
 
-**CPU/MPS support:**
+**CPU/MPS support:** For testing on Macbook/CPU, see [dev/runcpu.sh](dev/runcpu.sh)
 
-- For testing pipelines on Macbook/CPU, see [dev/runcpu.sh](dev/runcpu.sh)
-- Merged in [CPU|MPS PR](https://github.com/karpathy/nanochat/pull/88) on Oct 21, 2025
-
----
-
-## Customization
+### Customization
 
 **Infuse personality:**
 
-- See [Guide: infusing identity to your nanochat](https://github.com/karpathy/nanochat/discussions/139)
-- Generate synthetic identity conversations
-- Mix into midtraining and SFT stages
+- [Guide: infusing identity to your nanochat](https://github.com/karpathy/nanochat/discussions/139)
+- Generate synthetic conversations, mix into mid-training and SFT
 
 **Add new abilities:**
 
-- See [Guide: counting r in strawberry](https://github.com/karpathy/nanochat/discussions/164)
-- Create custom tasks and datasets
-- Extend evaluation framework
+- [Guide: counting r in strawberry](https://github.com/karpathy/nanochat/discussions/164)
+- Create custom tasks, extend evaluation framework
+
+---
+
+## Fork & Sync
+
+### Fork This Repository
+
+1. Click "Fork" on GitHub
+2. Clone: `git clone https://github.com/YourUsername/nanochat.git`
+3. (Optional) Update `runpod_onstart.sh` default `GIT_USERNAME` to yours
+4. Deploy and train!
+
+### Stay Synced with Upstream
+
+This fork regularly pulls updates from [karpathy/nanochat](https://github.com/karpathy/nanochat):
+
+```bash
+git remote add upstream https://github.com/karpathy/nanochat.git
+git fetch upstream
+git merge upstream/master
+git push origin master
+```
+
+**Last synced:** December 10, 2025 (commit `d575940`)
+
+**Recent upstream changes:**
+
+- Checkpoint race condition fix (multi-GPU stability)
+- Multi-epoch dataloader resume improvements
+- SpellingBee random seed collision fix
+- Iterator pattern updates, KV cache enhancements
 
 ---
 
@@ -448,61 +285,24 @@ torchrun --standalone --nproc_per_node=8 -m scripts.mid_train -- --device_batch_
 │   ├── base_train.py             # Base model training
 │   ├── mid_train.py              # Mid-training (chat data)
 │   ├── chat_sft.py               # Supervised fine-tuning
-│   ├── chat_web.py               # Web interface
-│   └── [other training scripts]
-├── runpod_onstart.sh             # NEW: Runpod automation
+│   └── chat_web.py               # Web interface
+├── runpod_onstart.sh             # NEW: RunPod automation
 ├── nanochat/
-│   ├── gpt.py                    # GPT Transformer implementation
+│   ├── gpt.py                    # GPT Transformer
 │   ├── tokenizer.py              # BPE tokenizer
-│   ├── engine.py                 # Inference with KV cache
-│   └── [core modules]
-├── tasks/                        # Evaluation tasks (MMLU, GSM8K, etc.)
-├── rustbpe/                      # Custom Rust BPE tokenizer trainer
-├── speedrun.sh                   # Train the ~$100 nanochat d20
-├── run1000.sh                    # Train the ~$800 nanochat d32
+│   └── engine.py                 # Inference with KV cache
+├── tasks/                        # Evaluation (MMLU, GSM8K, etc.)
+├── rustbpe/                      # Rust BPE tokenizer trainer
+├── speedrun.sh                   # Train ~$100 nanochat (d20)
+├── run1000.sh                    # Train ~$800 nanochat (d32)
 └── pyproject.toml                # Dependencies
 ```
 
-See [karpathy/nanochat](https://github.com/karpathy/nanochat#file-structure) for complete file descriptions.
-
----
-
-## Credits & Attribution
-
-**Core Implementation:**
-
-- **Andrej Karpathy** - Original nanochat design, implementation, and ongoing development
-    - Repository: [karpathy/nanochat](https://github.com/karpathy/nanochat)
-    - Course: [LLM101n](https://github.com/karpathy/LLM101n) (upcoming from Eureka Labs)
-
-**Runpod + `wandb` Integration and HuggingFace Utilities:**
-
-- **Trelis Research** - Runpod template, push/pull scripts, comprehensive tutorial
-    - Repository: [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat)
-    - Substack Guide: [Train an LLM from Scratch with Karpathy's Nanochat](https://trelis.substack.com/p/train-an-llm-from-scratch-with-karpathys)
-    - YouTube Video Tutorial: [Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)
-
-### Upstream Tracking
-
-This fork tracks [karpathy/nanochat](https://github.com/karpathy/nanochat) and merges updates regularly:
-
-- **Last synced:** December 10, 2025
-- **Base commit:** `d575940` (Dec 8, 2025)
-- **Sync frequency:** Weekly or before major updates
-
-**Recent upstream changes integrated:**
-
-- ✅ Checkpoint directory race condition fix (multi-GPU training stability)
-- ✅ Multi-epoch dataloader resume improvements
-- ✅ SpellingBee random seed collision fix
-- ✅ Iterator pattern updates in SFT training
-- ✅ KV cache readability enhancements
+See [karpathy/nanochat](https://github.com/karpathy/nanochat#file-structure) for complete descriptions.
 
 ---
 
 ## Tests
-
-Some tests exist, especially for the tokenizer:
 
 ```bash
 python -m pytest tests/test_rustbpe.py -v -s
@@ -512,14 +312,11 @@ python -m pytest tests/test_rustbpe.py -v -s
 
 ## Questions & Community
 
-**Ask questions about this repo:**
+**Ask questions:**
 
 - [DeepWiki](https://deepwiki.com/karpathy/nanochat) - AI-powered code Q&A
-
-**Community discussions:**
-
 - [karpathy/nanochat Discussions](https://github.com/karpathy/nanochat/discussions) - Main community
-- [Runpod Discord](https://discord.gg/runpod) - Cloud infrastructure help
+- [RunPod Discord](https://discord.gg/runpod) - Infrastructure help
 - [HuggingFace Forums](https://discuss.huggingface.co) - Model sharing
 
 ---
@@ -528,46 +325,52 @@ python -m pytest tests/test_rustbpe.py -v -s
 
 **To this fork:**
 
-- Open issues for fork-specific features or deployment guides
-- Submit PRs for enhancements or documentation improvements
+- Open issues for deployment guides or fork-specific features
+- Submit PRs for enhancements
 
 **To upstream (karpathy/nanochat):**
 
 - Report bugs or request features at [karpathy/nanochat](https://github.com/karpathy/nanochat)
 - This fork regularly pulls upstream changes
 
-**Current LLM Policy: Disclosure (for both this fork and upstream):**
-
-When submitting a PR, please declare any parts that had substantial LLM contribution and that you have not written or that you do not fully understand.
-
-*This fork itself is being developed in collaboration and with the assistance of LLMs.*
+**LLM Policy (Disclosure):**  
+When submitting PRs, declare any parts with substantial LLM contribution you haven't fully verified.  
+*This fork is developed with LLM assistance.*
 
 ---
 
-## Acknowledgements
+## Credits & Attribution
 
-From **karpathy/nanochat:**
+**Core Implementation:**
 
-- The name (nanochat) derives from [nanoGPT](https://github.com/karpathy/nanoGPT), which only covered pretraining
+- **Andrej Karpathy** - Original design, implementation, ongoing development
+    - Repository: [karpathy/nanochat](https://github.com/karpathy/nanochat)
+    - Course: [LLM101n](https://github.com/karpathy/LLM101n) (upcoming from Eureka Labs)
+
+**RunPod + W&B Integration & HuggingFace Utilities:**
+
+- **Trelis Research** (Ronan K. McGovern) - RunPod template, push/pull scripts, tutorial
+    - Repository: [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat)
+    - [Substack Guide](https://trelis.substack.com/p/train-an-llm-from-scratch-with-karpathys)
+    - [YouTube Tutorial](https://www.youtube.com/watch?v=qra052AchPE) (29 min)
+    - [RunPod One-Click Template](https://console.runpod.io/deploy?template=ikas3s2cii) (affiliate)
+
+**Fork Integration:**
+
+- **Original Zen** (@originalzen) - Merged karpathy + TrelisResearch with bug analysis
+
+### Acknowledgements (from upstream)
+
+- Name derives from [nanoGPT](https://github.com/karpathy/nanoGPT)
 - Inspired by [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt)
 - Thank you to [HuggingFace](https://huggingface.co/) for fineweb and smoltalk
 - Thank you [Lambda](https://lambda.ai/service/gpu-cloud) for compute
 - Thank you to Alec Radford for guidance
 - Thank you to [@svlandeg](https://github.com/svlandeg) for repo management
 
-Of **TrelisResearch** for:
-
-- Runpod one-click template and deployment automation. Find it here via his affiliate link:
-    - <https://console.runpod.io/deploy?template=ikas3s2cii>
-- Weights & Biases integration and monitoring
-- HuggingFace push/pull utility scripts
-- Comprehensive video tutorial and written guide
-
 ---
 
 ## Citation
-
-If you find nanochat helpful in your research, cite the original:
 
 ```bibtex
 @misc{nanochat,
@@ -593,17 +396,17 @@ MIT (same as upstream)
 
 - **This Fork:** [originalzen/nanochat](https://github.com/originalzen/nanochat) ⭐
 - **Upstream:** [karpathy/nanochat](https://github.com/karpathy/nanochat)
-- **Adaptation:** [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat)
+- **Reference:** [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat)
 
 **Resources:**
 
-- [Trelis Video Tutorial](https://www.youtube.com/watch?v=qra052AchPE)
+- [Trelis Video](https://www.youtube.com/watch?v=qra052AchPE) - 29 min tutorial
 - [Karpathy Discussions](https://github.com/karpathy/nanochat/discussions)
-- [LLM101n Course](https://github.com/karpathy/LLM101n)
+- [LLM101n Course](https://github.com/karpathy/LLM101n) - upcoming
 
 **Tools:**
 
-- [Runpod Console](https://www.runpod.io/console/pods)
+- [RunPod Console](https://runpod.io/console/pods)
 - [HuggingFace Hub](https://huggingface.co)
 - [Weights & Biases](https://wandb.ai)
 
