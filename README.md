@@ -14,8 +14,10 @@
 
 Follow along with this comprehensive video guide by Trelis Research:
 
+[Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)
+
 <a href="https://www.youtube.com/watch?v=qra052AchPE">
-  <img src="https://img.youtube.com/vi/qra052AchPE/maxresdefault.jpg" alt="Train an LLM from Scratch" width="400">
+  <img src="https://img.youtube.com/vi/qra052AchPE/maxresdefault.jpg" alt="Train an LLM from Scratch with Karpathy's Nanochat" width="400">
 </a>
 
 **[▶️ Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)** (29 minutes)
@@ -497,6 +499,8 @@ MIT (same as upstream)
 ---
 
 ## Listen to More Generalized Discussion with Andrej Karpathy
+
+[Andrej Karpathy: Tesla AI, Self-Driving, Optimus, Aliens, and AGI | Lex Fridman Podcast #333](https://www.youtube.com/watch?v=cdiD-9MMpb0)
 
 <a href="https://www.youtube.com/watch?v=cdiD-9MMpb0">
   <img src="https://img.youtube.com/vi/cdiD-9MMpb0/maxresdefault.jpg" alt="Andrej Karpathy: Tesla AI, Self-Driving, Optimus, Aliens, and AGI | Lex Fridman Podcast #333" width="400">
