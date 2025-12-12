@@ -6,6 +6,193 @@
 
 ---
 
+## Quick Start: Train Your Own LLM in 4 Hours
+
+**Cost:** ~$100 | **Time:** ~4 hours | **Result:** 500M parameter GPT-2 level chatbot
+
+### Watch Suggested Tutorial Video by Trelis Research
+
+Follow along with the comprehensive video guide together with this Quick Start:
+
+[![Train an LLM from Scratch](https://img.youtube.com/vi/qra052AchPE/maxresdefault.jpg)](https://www.youtube.com/watch?v=qra052AchPE)
+
+**[▶️ Watch: Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)** (29 minutes)
+
+### Prerequisites
+
+**Get your API keys:**
+
+1. **HuggingFace Token** (REQUIRED) - [Create token with "Write" permissions](https://huggingface.co/settings/tokens)
+2. **Weights & Biases API Key** (RECOMMENDED) - [Get your API key](https://wandb.ai/authorize)
+
+### Deploy & Train (3 commands)
+
+**Option A: Use this fork directly**
+
+```bash
+# 1. Deploy 8x H100 node on Runpod (https://runpod.io)
+# 2. Configure Runpod Secrets:
+#    - HF_TOKEN (your HuggingFace token)
+#    - WANDB_API_KEY (your W&B key)
+
+# 3. SSH into pod and run:
+cd /workspace
+git clone https://github.com/originalzen/nanochat.git
+cd nanochat
+export WANDB_RUN=nanochat_d20
+screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
+
+# 4. Detach from screen: Ctrl+A, then D
+# 5. Monitor: tail -f speedrun.log
+# 6. Come back in 4 hours!
+```
+
+**Option B: Fork and customize**
+
+```bash
+# 1. Fork this repo on GitHub
+# 2. Configure RunPod Secrets:
+#    - HF_TOKEN
+#    - WANDB_API_KEY
+#    - GIT_USERNAME (set to your GitHub username)
+
+# 3. SSH into pod and run:
+cd /workspace
+git clone https://github.com/YOUR_USERNAME/nanochat.git
+cd nanochat
+export WANDB_RUN=nanochat_d20
+screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
+```
+
+### After Training (~30 minutes for backup)
+
+**CRITICAL: Backup BEFORE terminating pod!** Once terminated, all data is lost forever.
+
+#### What Gets Generated During Training
+
+| Artifact | Size | Purpose | Backup Priority |
+|----------|------|---------|-----------------|
+| **SFT checkpoint** | ~2GB | Final chat model (MOST IMPORTANT) | 🔴 CRITICAL |
+| **Tokenizer** | ~1MB | Required for all inference | 🔴 CRITICAL |
+| **Base checkpoint** | ~2GB | Pre-trained model (for research/experiments) | 🟡 RECOMMENDED |
+| **Mid checkpoint** | ~2GB | Chat-tuned model (intermediate stage) | 🟡 RECOMMENDED |
+| **Report** | ~50KB | Training metrics & benchmarks | 🟡 RECOMMENDED |
+| **Training logs** | ~10MB | speedrun.log (debugging/learning) | ⚪ OPTIONAL |
+
+**Total:** ~6-8GB for complete backup | **Minimum:** ~2GB (SFT + tokenizer only)
+
+#### Test Your Model First
+
+```bash
+# Activate environment (if not already active)
+source .venv/bin/activate
+export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
+
+# Start chat interface
+python -m scripts.chat_web
+# Access at: https://<your-pod-id>-8000.proxy.runpod.net
+
+# Test prompts:
+# - "What is the capital of France?"
+# - "Tell me a joke"
+# - "Why is the sky blue?"
+
+# Stop server: Ctrl+C
+```
+
+#### Backup ALL Checkpoints to HuggingFace
+
+**Complete backup (recommended for $100 investment):**
+
+```bash
+source .venv/bin/activate
+export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
+
+# Replace YourUsername/my-nanochat with your HuggingFace repo
+
+# 1. SFT checkpoint (CRITICAL - your final chat model)
+python -m scripts.push_to_hf --stage sft \
+  --repo-id YourUsername/my-nanochat --path-in-repo sft/d20
+
+# 2. Tokenizer (CRITICAL - required for inference)
+python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" \
+  --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
+
+# 3. Report (RECOMMENDED - training metrics)
+python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/report" \
+  --repo-id YourUsername/my-nanochat --path-in-repo report/latest
+
+# 4. Base checkpoint (OPTIONAL - for experiments)
+python -m scripts.push_to_hf --stage base \
+  --repo-id YourUsername/my-nanochat --path-in-repo base/d20
+
+# 5. Mid checkpoint (OPTIONAL - for research)
+python -m scripts.push_to_hf --stage mid \
+  --repo-id YourUsername/my-nanochat --path-in-repo mid/d20
+```
+
+**Upload time:** ~10-20 minutes depending on connection speed
+
+**Verify uploads:** Visit `https://huggingface.co/YourUsername/my-nanochat` to confirm all folders exist
+
+#### Minimum Backup (if time-constrained)
+
+```bash
+# Just the essentials (SFT + tokenizer, ~2GB, ~5 minutes)
+python -m scripts.push_to_hf --stage sft --repo-id YourUsername/my-nanochat --path-in-repo sft/d20
+python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
+```
+
+**After backup verified:** Terminate your pod (billing stops immediately)
+
+**Note:** HuggingFace storage is FREE for public models. Back up everything - you can always delete later!
+
+#### Why Backup Each Checkpoint?
+
+**SFT checkpoint (sft/d20):**
+
+- Your final chat model - use for inference
+- Required if you want to chat with your model later
+- Can be loaded on local machine or AWS for deployment
+
+**Tokenizer:**
+
+- Absolutely required for ANY inference (encoding/decoding text)
+- Without this, none of your checkpoints are usable
+- Deterministic - if you retrain tokenizer on same data, you get identical result
+
+**Base checkpoint (base/d20):**
+
+- Pre-trained model before chat tuning
+- Useful for: Custom fine-tuning experiments, research, understanding base capabilities
+- Skip if: You only want the chat model
+
+**Mid checkpoint (mid/d20):**
+
+- Intermediate stage (base + chat data, before SFT)
+- Useful for: Comparing training stages, research
+- Skip if: You only want the final model
+
+**Report (report/latest):**
+
+- Training metrics: CORE score, MMLU, GSM8K, HumanEval benchmarks
+- Your model's "report card"
+- Educational value: Compare your results to others
+- Skip if: You don't care about metrics
+
+**Training logs (speedrun.log):**
+
+- Full console output from 4-hour training
+- Useful for: Debugging, learning, sharing experience
+- Not uploadable via push_to_hf.py (download manually if desired)
+- Skip if: You don't need historical record
+
+**Recommendation for $100 run:** Back up ALL checkpoints (~10 minutes, FREE storage). You invested $100 in training - don't risk losing valuable artifacts!
+
+**For future training sessions:** If you want to resume/continue training later (e.g., monthly $100 runs), you'll need the checkpoints which include optimizer states. Without them, you'd have to start from scratch.
+
+---
+
 ## Fork Information
 
 This fork integrates convenience enhancements from [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat) into the upstream [karpathy/nanochat](https://github.com/karpathy/nanochat) codebase.
@@ -83,7 +270,7 @@ For Runpod deployment with automated setup:
 cd /workspace
 git clone https://github.com/originalzen/nanochat.git
 cd nanochat
-export WANDB_RUN=my_run_name
+export WANDB_RUN=nanochat_d20
 screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
 ```
 
@@ -104,9 +291,11 @@ screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
 
 ## Backup & Restore Checkpoints
 
-### Upload to HuggingFace (After Training)
+**For post-training backup workflow, see [After Training](#after-training) section in Quick Start above.**
 
-This fork includes convenience scripts for checkpoint management:
+### Complete Backup Reference
+
+This fork includes convenience scripts for checkpoint management (from TrelisResearch):
 
 ```bash
 source .venv/bin/activate
