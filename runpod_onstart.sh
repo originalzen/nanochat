@@ -1,29 +1,29 @@
 #!/bin/bash
 #
-# RunPod Template Startup Script for NanoChat Training
+# Runpod Template Startup Script for NanoChat Training
 #
 # This automated setup script is adapted from TrelisResearch/nanochat and configured
 # for the originalzen/nanochat fork, which integrates karpathy/nanochat (latest code)
-# with TrelisResearch enhancements (HuggingFace utilities, RunPod automation).
+# with TrelisResearch enhancements (HuggingFace utilities, Runpod automation).
 #
 # Source: https://github.com/TrelisResearch/nanochat/blob/master/runpod_onstart.sh
 # Fork: https://github.com/originalzen/nanochat
 # Upstream: https://github.com/karpathy/nanochat
 #
 # USAGE:
-#   1. Configure RunPod Secrets (see Environment Variables section below)
-#   2. Upload this script as a custom RunPod template startup script
+#   1. Configure Runpod Secrets (see Environment Variables section below)
+#   2. Upload this script as a custom Runpod template startup script
 #   3. Deploy 8x H100 pod → Repo auto-clones → Ready to train
 #
 # REPRODUCIBILITY:
 #   To use with your own fork:
 #   - Fork this repository on GitHub
-#   - Set GIT_USERNAME secret in RunPod to your GitHub username
+#   - Set GIT_USERNAME secret in Runpod to your GitHub username
 #   - Deploy pod with this template
 #   - Template will clone from YOUR_USERNAME/nanochat automatically
 #
 # ──────────────────────────────────────────────────────────────────────────────
-# ENVIRONMENT VARIABLES (Set in RunPod Console → Secrets)
+# ENVIRONMENT VARIABLES (Set in Runpod Console → Secrets)
 # ──────────────────────────────────────────────────────────────────────────────
 #
 # REQUIRED (Training will fail without these):
@@ -168,6 +168,6 @@ echo "  - Monitor logs: tail -f speedrun.log"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Continue with standard RunPod startup
+# Continue with standard Runpod startup
 exec /start.sh
 '

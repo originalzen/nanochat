@@ -14,7 +14,9 @@
 
 Follow along with this comprehensive video guide by Trelis Research:
 
-[![Train an LLM from Scratch](https://img.youtube.com/vi/qra052AchPE/maxresdefault.jpg)](https://www.youtube.com/watch?v=qra052AchPE)
+<a href="https://www.youtube.com/watch?v=qra052AchPE">
+  <img src="https://img.youtube.com/vi/qra052AchPE/maxresdefault.jpg" alt="Train an LLM from Scratch" width="400">
+</a>
 
 **[▶️ Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)** (29 minutes)
 
@@ -25,36 +27,68 @@ Follow along with this comprehensive video guide by Trelis Research:
 
 ### Step 2: Deploy & Configure
 
-**Deploy 8x H100 pod on [RunPod](https://runpod.io):**
+**Deploy 8x H100 pod on [Runpod](https://runpod.io):**
 
 - Select: 8x H100 SXM (or PCIe/NVL)
 - Cost: ~$24/hour
 
-**Configure RunPod Secrets:**
+**Configure Runpod Secrets:**
 
 - `HF_TOKEN` - Your HuggingFace token (required)
 - `WANDB_API_KEY` - Your W&B key (optional but recommended)
 - `GIT_USERNAME` - Your GitHub username if you forked (optional, defaults to `originalzen`)
 
-### Step 3: Start Training (3 commands)
+### Step 3: Start Training
+
+**Two deployment options:**
+
+#### Option A: Using runpod_onstart.sh Template (Automated)
+
+**If you uploaded `runpod_onstart.sh` as a custom Runpod template:**
+
+The template automatically handles: cloning repo, installing dependencies (`screen`, `git`, etc.), setting up environment variables.
 
 **SSH into pod and run:**
 
 ```bash
-cd /workspace
-git clone https://github.com/originalzen/nanochat.git
-cd nanochat
+# Repository already cloned to /workspace/nanochat by template
+cd /workspace/nanochat
+
+# Set your run name and start training
 export WANDB_RUN=nanochat_d20
 screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
 ```
 
-**Then:**
+**Note:** The video tutorial shows manual `git clone` and `apt-get install screen` commands, but these are **already done** by the template. Just set `WANDB_RUN` and launch `speedrun.sh`!
 
-- Detach: `Ctrl+A`, then `D`
-- Monitor: `tail -f speedrun.log`
-- Wait ~4 hours (or watch training on [wandb.ai](https://wandb.ai))
+#### Option B: Manual Deployment (No Template)
 
-**Using your own fork?** Replace `originalzen` with your GitHub username in clone command above.
+**If you're deploying without the template:**
+
+```bash
+# SSH into pod and run:
+cd /workspace
+git clone https://github.com/originalzen/nanochat.git
+cd nanochat
+
+# Install screen for session persistence
+apt-get update && apt-get install -y screen
+
+# Set run name and start training
+export WANDB_RUN=nanochat_d20
+screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
+```
+
+**Using your own fork?** Replace `originalzen` with your GitHub username in clone command.
+
+#### After Launching
+
+**For both options:**
+
+- Detach from screen: `Ctrl+A`, then `D`
+- Monitor progress: `tail -f speedrun.log`
+- Watch dashboard: [wandb.ai](https://wandb.ai) (if WANDB_API_KEY set)
+- Wait ~4 hours for training to complete
 
 ### Step 4: Test Your Model (5 minutes)
 
@@ -116,7 +150,7 @@ python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" --repo-i
 
 ### Step 6: Terminate Pod
 
-**After backup verified:** Terminate pod in RunPod console (billing stops immediately)
+**After backup verified:** Terminate pod in Runpod console (billing stops immediately)
 
 **Why backup all checkpoints?**
 
@@ -141,15 +175,15 @@ This fork integrates convenience enhancements from [TrelisResearch/nanochat](htt
 
 - `scripts/push_to_hf.py` - Upload checkpoints to HuggingFace Hub
 - `scripts/pull_from_hf.py` - Download checkpoints from HuggingFace Hub
-- `runpod_onstart.sh` - Automated RunPod environment setup
+- `runpod_onstart.sh` - Automated Runpod environment setup
 - `hf-transfer` + `huggingface-hub` dependencies
 
 ### Why This Fork Exists
 
-TrelisResearch added excellent RunPod integration and HuggingFace utilities, but was missing some upstream bug fixes from Karpathy. This fork merges the best of both:
+TrelisResearch added excellent Runpod integration and HuggingFace utilities, but was missing some upstream bug fixes from Karpathy. This fork merges the best of both:
 
 - Latest updates and bug fixes from Karpathy upstream
-- Convenience scripts from TrelisResearch (RunPod automation, W&B integration, HF backup workflow)
+- Convenience scripts from TrelisResearch (Runpod automation, W&B integration, HF backup workflow)
 - Regular upstream sync to stay current
 
 This fork also serves as a learning tool for git workflows, ML/LLM training, and experimentation. Thanks to Andrej Karpathy for making nanochat accessible to everyone, and to Ronan K. McGovern at Trelis Research for the tutorial and scripts.
@@ -286,7 +320,7 @@ git push origin master
 │   ├── mid_train.py              # Mid-training (chat data)
 │   ├── chat_sft.py               # Supervised fine-tuning
 │   └── chat_web.py               # Web interface
-├── runpod_onstart.sh             # NEW: RunPod automation
+├── runpod_onstart.sh             # NEW: Runpod automation
 ├── nanochat/
 │   ├── gpt.py                    # GPT Transformer
 │   ├── tokenizer.py              # BPE tokenizer
@@ -316,7 +350,7 @@ python -m pytest tests/test_rustbpe.py -v -s
 
 - [DeepWiki](https://deepwiki.com/karpathy/nanochat) - AI-powered code Q&A
 - [karpathy/nanochat Discussions](https://github.com/karpathy/nanochat/discussions) - Main community
-- [RunPod Discord](https://discord.gg/runpod) - Infrastructure help
+- [Runpod Discord](https://discord.gg/runpod) - Infrastructure help
 - [HuggingFace Forums](https://discuss.huggingface.co) - Model sharing
 
 ---
@@ -347,13 +381,13 @@ When submitting PRs, declare any parts with substantial LLM contribution you hav
     - Repository: [karpathy/nanochat](https://github.com/karpathy/nanochat)
     - Course: [LLM101n](https://github.com/karpathy/LLM101n) (upcoming from Eureka Labs)
 
-**RunPod + W&B Integration & HuggingFace Utilities:**
+**Runpod + W&B Integration & HuggingFace Utilities:**
 
-- **Trelis Research** (Ronan K. McGovern) - RunPod template, push/pull scripts, tutorial
+- **Trelis Research** (Ronan K. McGovern) - Runpod template, push/pull scripts, tutorial
     - Repository: [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat)
     - [Substack Guide](https://trelis.substack.com/p/train-an-llm-from-scratch-with-karpathys)
     - [YouTube Tutorial](https://www.youtube.com/watch?v=qra052AchPE) (29 min)
-    - [RunPod One-Click Template](https://console.runpod.io/deploy?template=ikas3s2cii) (affiliate)
+    - [Runpod One-Click Template](https://console.runpod.io/deploy?template=ikas3s2cii) (affiliate)
 
 **Fork Integration:**
 
@@ -406,9 +440,17 @@ MIT (same as upstream)
 
 **Tools:**
 
-- [RunPod Console](https://runpod.io/console/pods)
+- [Runpod Console](https://runpod.io/console/pods)
 - [HuggingFace Hub](https://huggingface.co)
 - [Weights & Biases](https://wandb.ai)
+
+---
+
+## Listen to More Generalized Discussion with Andrej Karpathy
+
+<a href="https://www.youtube.com/watch?v=cdiD-9MMpb0">
+  <img src="https://img.youtube.com/vi/cdiD-9MMpb0/maxresdefault.jpg" alt="Andrej Karpathy: Tesla AI, Self-Driving, Optimus, Aliens, and AGI | Lex Fridman Podcast #333" width="400">
+</a>
 
 ---
 
