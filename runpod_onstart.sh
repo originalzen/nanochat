@@ -69,8 +69,9 @@ GITHUB_PAT="${GITHUB_PAT:-}"                   # Personal Access Token (only for
 # ──────────────────────────────────────────────────────────────────────────────
 
 echo "==> Installing system dependencies..."
-apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+# Using -q (not -qq) option to suppress progress bars while preserving package names and errors for debugging
+apt-get update -q
+DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
   git nano screen vim \
   ninja-build build-essential \
   python3-dev python3-venv \
