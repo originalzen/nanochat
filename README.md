@@ -473,10 +473,66 @@ torchrun --standalone --nproc_per_node=8 -m scripts.mid_train -- --device_batch_
 
 ### Customization
 
-**Infuse personality:**
+**Identity Conversations & OpenRouter Setup:**
 
-- [Guide: infusing identity to your nanochat](https://github.com/karpathy/nanochat/discussions/139)
-- Generate synthetic conversations, mix into mid-training and SFT
+During mid-training, nanochat downloads `identity_conversations.jsonl` (2.3MB) to inject personality into the model. The training script automatically handles this with a robust multi-tier approach:
+
+1. **Check cache first:** If file already exists from previous run, skip download
+2. **Download from TrelisResearch GitHub:** Primary source (free, fast, reliable)
+3. **Fallback to local generation:** If download fails, generate using OpenRouter API
+
+**You don't need to do anything for standard training** - the script handles everything automatically. However, if you want to generate custom identity conversations with different personalities, you'll need to set up OpenRouter API access:
+
+**OpenRouter Setup (only for custom generation):**
+
+1. **Sign up for OpenRouter:** [https://openrouter.ai/](https://openrouter.ai/)
+2. **Get API key:** Visit [OpenRouter Dashboard](https://openrouter.ai/keys) after signing up
+3. **Create token file in repository root:**
+
+   ```bash
+   # Create file with your API key
+   echo "your-api-key-here" > openroutertoken.txt
+   ```
+
+4. **Add to .gitignore (CRITICAL):**
+
+   ```bash
+   echo "openroutertoken.txt" >> .gitignore
+   ```
+
+**Generate custom identity conversations (advanced):**
+
+```bash
+# Only needed if you want custom personalities - not required for standard training!
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Generate new identity_conversations.jsonl
+PYTHONPATH=$(pwd) python dev/gen_synthetic_data.py
+
+# The script will:
+# - Use your OpenRouter API key from openroutertoken.txt
+# - Generate synthetic personality conversations via LLM
+# - Save to cache directory for use in next training run
+```
+
+**When you need OpenRouter API:**
+
+- ❌ **Standard training:** NOT needed - file downloads automatically from GitHub
+- ✅ **Custom personalities:** Generate different conversation styles
+- ✅ **Fallback only:** If GitHub download fails (rare)
+
+**Cost:** Typically a few cents per generation. Check [OpenRouter pricing](https://openrouter.ai/models).
+
+**Custom generation use cases:**
+
+- Different personality profiles (formal vs casual, technical vs general)
+- Domain-specific conversation patterns
+- Multilingual identity injection
+- Experimental conversational styles
+
+See [Guide: infusing identity to your nanochat](https://github.com/karpathy/nanochat/discussions/139) for detailed customization strategies.
 
 **Add new abilities:**
 
