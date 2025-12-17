@@ -37,6 +37,11 @@ Use the pre-configured template with `runpod_onstart.sh` already set up:
 
 Or search for `originalzen_nanochat` in Runpod's public templates.
 
+**Template Details:**
+
+- **Docker Image:** `runpod/pytorch:0.7.0-cu1263-torch260-ubuntu2204` ([Docker Hub](https://hub.docker.com/r/runpod/pytorch))
+- **Size:** ~10.6 GB (download time varies by network speed - see troubleshooting below)
+
 #### Deployment Settings
 
 **⚠️ IMPORTANT: Network Speed Optimization**
@@ -293,11 +298,15 @@ scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/report.md ./
 
 ### Slow Network Speeds / Long Download Times
 
-**Problem:** Docker image and package dependency download taking much longer than expected.
+**Problem:** Docker image (`runpod/pytorch:0.7.0-cu1263-torch260-ubuntu2204`, ~10.6 GB) and package dependencies download taking much longer than expected.
 
 **Root Cause:** Assignment to distant availability zones or low-bandwidth nodes during peak traffic hours (e.g., Iceland EUR-IS-3 when you're in US).
 
-**Workaround:**
+**Solution:**
+
+Select the correct cloud type and filters to ensure high-speed network assignment:
+
+![Runpod Cloud Filters](assets/runpod-cloud-filters.png)
 
 1. **Use Community Cloud** (not Secure Cloud) - provides Internet Speed filtering
 2. **Filter by "Extreme (1000 Mb/s or higher)"** bandwidth
@@ -309,7 +318,7 @@ scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/report.md ./
 - ✅ Good: ~15 minutes for Docker image + packages (1000 Mb/s+)
 - ❌ Bad: 60+ minutes (slow zones like some EU locations from US)
 
-**Cost Impact:** Slow downloads can waste $10-$30 in compute time before training even starts!
+**Cost Impact:** Slow downloads can waste over $30 in compute time before training even starts!
 
 ### Missing Environment Variables
 
