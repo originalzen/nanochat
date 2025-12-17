@@ -46,24 +46,24 @@ Or search for `originalzen_nanochat` in Runpod's public templates.
 
 **⚠️ IMPORTANT: Network Speed Optimization**
 
-To avoid wasting money on slow downloads (~30 min for Docker image + packages):
+To avoid unnecessary cost expense on potentially slow internet speed taking longer than an hour to download Docker image + packages:
 
-1. **Select "Community Cloud"** (NOT "Secure Cloud")
-   - Community Cloud provides additional filtering options
-   - Better availability and network speeds in most cases
+1. **Select "Community cloud"** instead of the preselected "Secure cloud"
+   - Community Cloud provides additional filtering options for internet speed
+   - Might improve availability and network speeds in some cases
+   - Consider the trade-offs depending on your needs and use-case
 
 2. **Filter by Internet Speed:**
    - Set to **"Extreme (1000 Mb/s or higher)"**
-   - This reduces Docker image download from 60+ minutes to ~15 minutes
+   - This might reduce download time from > 60 minutes to < 15 minutes
    - Critical for cost optimization on expensive H100 instances
 
 3. **Region Selection:**
    - Select **"Any"** to maximize GPU availability
    - The system will assign you to the nearest available high-speed zone
-   - Typical assignments: US (various states), Canada (CA), or EU zones
 
 4. **GPU Selection:**
-   - **Primary choice:** 8x H100 SXM (~$24/hour, best performance)
+   - **Primary choice:** 8x H100 SXM ($21.52/hour, best performance)
    - **Alternatives:** 8x H100 PCIe or NVL (similar performance)
    - Wait for all 8 GPUs to be available (don't settle for 5-6 if you can wait)
 
@@ -656,7 +656,7 @@ MIT (same as upstream)
 
 ---
 
-## Listen to More Generalized Discussion with Andrej Karpathy
+## Listen to Thought-Provoking Discussion with Andrej Karpathy and Lex Fridman
 
 <a href="https://www.youtube.com/watch?v=cdiD-9MMpb0">
   <img src="https://img.youtube.com/vi/cdiD-9MMpb0/maxresdefault.jpg" alt="Andrej Karpathy: Tesla AI, Self-Driving, Optimus, Aliens, and AGI | Lex Fridman Podcast #333" width="400">
