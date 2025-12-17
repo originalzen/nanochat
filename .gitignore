@@ -13,6 +13,7 @@ docs/
 repos-for-reference/
 .cursorindexingignore
 .env
+openroutertoken.txt
 .cursor/
 raw-commit-diffs/
 cursor-session-memories/
