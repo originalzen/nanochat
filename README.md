@@ -29,22 +29,67 @@ Follow along with this comprehensive video guide by Trelis Research:
 
 **Deploy 8x H100 pod on [Runpod](https://runpod.io):**
 
-- Select: 8x H100 SXM (or PCIe/NVL)
-- Cost: ~$24/hour
+#### Quick Deploy (Recommended)
 
-**Configure Runpod Secrets:**
+Use the pre-configured template with `runpod_onstart.sh` already set up:
 
-- `HF_TOKEN` - Your HuggingFace token (required)
-- `WANDB_API_KEY` - Your W&B key (optional but recommended)
-- `GIT_USERNAME` - Your GitHub username if you forked (optional, defaults to `originalzen`)
+**🚀 [One-Click Deploy Template](https://console.runpod.io/deploy?template=q3zrjjxw39)**
+
+Or search for `originalzen_nanochat` in Runpod's public templates.
+
+#### Deployment Settings
+
+**⚠️ IMPORTANT: Network Speed Optimization**
+
+To avoid wasting money on slow downloads (~30 min for Docker image + packages):
+
+1. **Select "Community Cloud"** (NOT "Secure Cloud")
+   - Community Cloud provides additional filtering options
+   - Better availability and network speeds in most cases
+
+2. **Filter by Internet Speed:**
+   - Set to **"Extreme (1000 Mb/s or higher)"**
+   - This reduces Docker image download from 60+ minutes to ~15 minutes
+   - Critical for cost optimization on expensive H100 instances
+
+3. **Region Selection:**
+   - Select **"Any"** to maximize GPU availability
+   - The system will assign you to the nearest available high-speed zone
+   - Typical assignments: US (various states), Canada (CA), or EU zones
+
+4. **GPU Selection:**
+   - **Primary choice:** 8x H100 SXM (~$24/hour, best performance)
+   - **Alternatives:** 8x H100 PCIe or NVL (similar performance)
+   - Wait for all 8 GPUs to be available (don't settle for 5-6 if you can wait)
+
+**Configure Runpod Secrets (Environment Variables):**
+
+![Runpod Environment Variables](assets/runpod-environment-variables.png)
+
+**Required:**
+
+- `HF_TOKEN` - Your HuggingFace token with "Write" permissions ([get token](https://huggingface.co/settings/tokens))
+
+**Recommended:**
+
+- `WANDB_API_KEY` - Your W&B key for training dashboards ([get key](https://wandb.ai/authorize))
+
+**Optional:**
+
+- `GIT_USERNAME` - Your GitHub username if you forked (defaults to `originalzen`)
+- `GIT_USER_NAME` - Full name for git commits (optional)
+- `GIT_USER_EMAIL` - Email for git commits (optional)
+- `GITHUB_PAT` - Personal access token (only for private forks)
+
+**Cost Estimate:** ~$100 for complete 4-hour training run
 
 ### Step 3: Start Training
 
 **Two deployment options:**
 
-#### Option A: Using runpod_onstart.sh Template (Automated)
+#### Option A: Using Pre-Configured Template (Recommended)
 
-**If you uploaded `runpod_onstart.sh` as a custom Runpod template:**
+**If you used the one-click deploy template:**
 
 The template automatically handles: cloning repo, installing dependencies (`screen`, `git`, etc.), setting up environment variables.
 
@@ -54,7 +99,7 @@ The template automatically handles: cloning repo, installing dependencies (`scre
 # Repository already cloned to /workspace/nanochat by template
 cd /workspace/nanochat
 
-# Set your run name and start training
+# Set your run name for `wandb` and start training in a persistent screen session
 export WANDB_RUN=nanochat_d20
 screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
 ```
@@ -81,14 +126,47 @@ screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
 
 **Using your own fork?** Replace `originalzen` with your GitHub username in clone command.
 
-#### After Launching
+#### Managing Your Training Session
 
-**For both options:**
+**Screen Commands (Essential):**
 
-- Detach from screen: `Ctrl+A`, then `D`
-- Monitor progress: `tail -f speedrun.log`
-- Watch dashboard: [wandb.ai](https://wandb.ai) (if WANDB_API_KEY set)
-- Wait ~4 hours for training to complete
+```bash
+# Detach from screen session (keeps training running)
+# Press: Ctrl+A, then D
+
+# Reattach to running session (reconnect after disconnect)
+screen -r speedrun
+
+# List all screen sessions
+screen -ls
+
+# Monitor training progress (live log tail)
+tail -f speedrun.log
+
+# Monitor with auto-scroll (follows output)
+tail -f speedrun.log -n 100
+```
+
+**Monitoring Progress:**
+
+- **W&B Dashboard:** [wandb.ai](https://wandb.ai) - Real-time metrics, loss curves, FLOPS (if WANDB_API_KEY set)
+- **Local Logs:** `tail -f speedrun.log` - Full training output
+- **Expected Duration:** ~4 hours for complete training
+- **Cost Tracking:** Monitor in Runpod console (target: < $100)
+
+**Training Phases:**
+
+1. **Tokenizer Training** - BPE vocabulary generation
+2. **Base Pre-training** - 10B tokens from FineWeb Edu
+3. **Mid-training** - Chat data and tool use
+4. **Supervised Fine-tuning** - Instruction following
+5. **Evaluation** - MMLU, GSM8K, HumanEval benchmarks
+
+**What to Watch For:**
+
+- FLOPS utilization should be > 40% in first 10 minutes (confirms GPU efficiency)
+- Loss should decrease steadily during training
+- No CUDA out-of-memory errors (if occurs, terminate and adjust `device_batch_size`)
 
 ### Step 4: Test Your Model (5 minutes)
 
@@ -208,6 +286,76 @@ scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/report.md ./
 - **Research:** Compare different training stages
 - **Educational:** Logs show full training progression for learning
 - **Free storage:** No cost to keep checkpoints on HuggingFace (logs stored locally)
+
+---
+
+## Common Deployment Issues & Solutions
+
+### Slow Network Speeds / Long Download Times
+
+**Problem:** Docker image and package dependency download taking much longer than expected.
+
+**Root Cause:** Assignment to distant availability zones or low-bandwidth nodes during peak traffic hours (e.g., Iceland EUR-IS-3 when you're in US).
+
+**Workaround:**
+
+1. **Use Community Cloud** (not Secure Cloud) - provides Internet Speed filtering
+2. **Filter by "Extreme (1000 Mb/s or higher)"** bandwidth
+3. **Select "Any" region** for maximum availability
+4. **Wait for all 8 GPUs** to be available rather than accepting partial node
+
+**Expected Performance:**
+
+- ✅ Good: ~15 minutes for Docker image + packages (1000 Mb/s+)
+- ❌ Bad: 60+ minutes (slow zones like some EU locations from US)
+
+**Cost Impact:** Slow downloads can waste $10-$30 in compute time before training even starts!
+
+### Missing Environment Variables
+
+**Problem:** Training fails with HuggingFace authentication errors.
+
+**Solution:**
+
+- Verify `HF_TOKEN` is set in Runpod Secrets (NOT plain environment variables)
+- Token must have "Write" permissions: <https://huggingface.co/settings/tokens>
+- After setting, restart Pod for Secrets to take effect
+
+### Screen Session Lost After Disconnect
+
+**Problem:** SSH disconnected and can't see training output.
+
+**Solution:**
+
+```bash
+# Reconnect to your running session
+screen -r speedrun
+
+# If that fails, list all sessions
+screen -ls
+
+# Then reconnect to specific session
+screen -r <session-id>
+```
+
+The template uses `-L -Logfile speedrun.log` which saves everything to file, so even if screen is lost, you can review `speedrun.log`.
+
+### Out of Memory Errors
+
+**Problem:** CUDA out of memory during training.
+
+**Solution:**
+
+Edit training scripts to reduce `--device_batch_size`:
+
+```bash
+# In speedrun.sh, modify the torchrun commands:
+# Change --device_batch_size=32 to 16, 8, 4, or 2
+# Example:
+torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- --device_batch_size=16
+```
+
+Scripts automatically compensate with gradient accumulation, so final results are identical.
 
 ---
 
@@ -433,15 +581,17 @@ When submitting PRs, declare any parts with substantial LLM contribution you hav
 
 **Runpod + W&B Integration & HuggingFace Utilities:**
 
-- **Trelis Research** (Ronan K. McGovern) - Runpod template, push/pull scripts, tutorial
+- **Trelis Research** (Ronan K. McGovern) - Runpod template concept/adaptation, push/pull scripts, tutorial
     - Repository: [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat)
     - [Substack Guide](https://trelis.substack.com/p/train-an-llm-from-scratch-with-karpathys)
     - [YouTube Tutorial](https://www.youtube.com/watch?v=qra052AchPE) (29 min)
-    - [Runpod One-Click Template](https://console.runpod.io/deploy?template=ikas3s2cii) (affiliate)
+    - [Trelis Runpod Template](https://console.runpod.io/deploy?template=ikas3s2cii) (original, affiliate link)
 
 **Fork Integration:**
 
-- **Original Zen** (@originalzen) - Merged karpathy + TrelisResearch with bug analysis
+- **originalzen** (@originalzen) - Merged karpathy + TrelisResearch with deployment optimizations
+    - Repository: [originalzen/nanochat](https://github.com/originalzen/nanochat)
+    - [originalzen Runpod Template](https://console.runpod.io/deploy?template=q3zrjjxw39)
 
 ### Acknowledgements (from upstream)
 
@@ -491,6 +641,7 @@ MIT (same as upstream)
 **Tools:**
 
 - [Runpod Console](https://runpod.io/console/pods)
+- [Runpod Template: originalzen_nanochat](https://console.runpod.io/deploy?template=q3zrjjxw39) - One-click deploy
 - [HuggingFace Hub](https://huggingface.co)
 - [Weights & Biases](https://wandb.ai)
 
