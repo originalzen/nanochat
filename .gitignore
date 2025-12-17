@@ -12,7 +12,9 @@ articles/
 docs/
 repos-for-reference/
 .cursorindexingignore
-DOCS_INDEX.md
 .env
 .cursor/
 raw-commit-diffs/
+cursor-session-memories/
+temp/
+nanochat-training-logs-reports/
