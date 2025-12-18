@@ -3,8 +3,35 @@
 bash -lc '
 set -euo pipefail
 
+# ════════════════════════════════════════════════════════════
+# 0. SSH Setup (Required for SCP/SFTP - No Password Provided)
+# ════════════════════════════════════════════════════════════
+# Runpod pods have no root password; only SSH key authentication works.
+# PUBLIC_KEY env var is auto-injected from Runpod account settings.
+
+echo "==> Setting up SSH/SCP access..."
+apt-get update -q
+DEBIAN_FRONTEND=noninteractive apt-get install -y -q openssh-server
+
+# Create SSH directory with secure permissions
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Configure SSH key authentication (bypasses password requirement)
+if [ -n "${PUBLIC_KEY}" ]; then
+  echo "$PUBLIC_KEY" > ~/.ssh/authorized_keys
+  chmod 600 ~/.ssh/authorized_keys
+  echo "==> SSH public key configured"
+else
+  echo "==> WARNING: PUBLIC_KEY not set - SSH key auth will not work"
+fi
+
+# Start SSH daemon for SCP/SFTP access
+service ssh start
+echo "==> SSH daemon started - SCP/SFTP now available"
+
 # ═══════════════════════════════
-# 0. Environment Variables Setup
+# 1. Environment Variables Setup
 # ═══════════════════════════════
 
 export PIP_ROOT_USER_ACTION=ignore
@@ -23,7 +50,7 @@ GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"         # Git author email
 GITHUB_PAT="${GITHUB_PAT:-}"                 # Your token for private repos
 
 # ════════════════════════════════════
-# 1. System Dependencies Installation
+# 2. System Dependencies Installation
 # ════════════════════════════════════
 
 echo "==> Installing system dependencies..."
@@ -35,7 +62,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
   pkg-config curl ca-certificates wget unzip
 
 # ═════════════════════════════════════════
-# 2. Git Identity Configuration (Optional)
+# 3. Git Identity Configuration (Optional)
 # ═════════════════════════════════════════
 
 if [ -n "${GIT_USER_NAME}" ]; then
@@ -49,7 +76,7 @@ if [ -n "${GIT_USER_EMAIL}" ]; then
 fi
 
 # ══════════════════════
-# 3. Repository Cloning
+# 4. Repository Cloning
 # ══════════════════════
 
 cd /workspace
@@ -70,43 +97,6 @@ else
 fi
 
 cd nanochat
-
-# ═══════════════════════════════
-# 4. Verify HuggingFace Scripts
-# ═══════════════════════════════
-
-if [ ! -f "scripts/push_to_hf.py" ] || [ ! -f "scripts/pull_from_hf.py" ]; then
-  echo "══════════════════════════════════════════"
-  echo "⚠️  WARNING: HF utility scripts missing!"
-  echo "══════════════════════════════════════════"
-  echo "Expected: scripts/push_to_hf.py, scripts/pull_from_hf.py"
-  echo "Training will work but manual checkpoint backup required."
-  echo ""
-  echo "To add manually after SSH:"
-  echo "  cd /workspace/nanochat && curl -o scripts/push_to_hf.py https://raw.githubusercontent.com/TrelisResearch/nanochat/master/scripts/push_to_hf.py"
-  echo "══════════════════════════════════════════"
-fi
-
-# ══════════════════════
-# 5. Environment Ready
-# ══════════════════════
-
-echo ""
-echo "═════════════════════════════════"
-echo "  🚀 NanoChat Environment Ready"
-echo "═════════════════════════════════"
-echo "  Repository: ${GIT_USERNAME}/nanochat"
-echo "  Location: /workspace/nanochat"
-echo "  HF_TOKEN: ${HF_TOKEN:+✅ SET}${HF_TOKEN:-❌ NOT SET (REQUIRED)}"
-echo "  WANDB_API_KEY: ${WANDB_API_KEY:+✅ SET}${WANDB_API_KEY:-⚪ NOT SET (OPTIONAL)}"
-echo ""
-echo "Start training (~4h, ~\$100):"
-echo "  cd /workspace/nanochat"
-echo "  export WANDB_RUN=my_run_name"
-echo "  screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh"
-echo ""
-echo "Screen: Ctrl+A, then D (detach) | screen -r speedrun (reattach) | tail -f speedrun.log (monitor)"
-echo "══════════════════════════════════════════"
 
 exec /start.sh
 '
