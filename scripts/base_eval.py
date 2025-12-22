@@ -31,7 +31,12 @@ from nanochat.core_eval import evaluate_task
 # nanochat specific function dealing with I/O etc.
 
 # ~162MB of data needed to evaluate the CORE metric
-EVAL_BUNDLE_URL = "https://karpathy-public.s3.us-west-2.amazonaws.com/eval_bundle.zip"
+# EVAL_BUNDLE_URL = "https://karpathy-public.s3.us-west-2.amazonaws.com/eval_bundle.zip"
+
+# Temporarily fall back to GitHub user ddudek's backup copy of the eval_bundle due to current inaccessibility of the S3 bucket.
+# See: https://github.com/karpathy/nanochat/issues/379
+EVAL_BUNDLE_URL = "https://github.com/user-attachments/files/24214174/eval_bundle.zip"
+# eval_bundle.zip.sha256: CBED546B616758035E95EB2D27401E12826EA18700DA7003F87A918056EDCEDD
 
 def place_eval_bundle(file_path):
     # here file_path is the path to the eval_bundle.zip file
