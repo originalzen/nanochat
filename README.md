@@ -63,9 +63,11 @@ Or search for `originalzen_nanochat` in Runpod's public templates.
 
 **Template Details:**
 
-- **Docker Image:** `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404` ([Runpod Template Reference](https://console.runpod.io/hub/template/runpod-pytorch-2-8-0?id=runpod-torch-v280))
+- **Docker Image:** `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`
+    - [Runpod Template Reference](https://console.runpod.io/hub/template/runpod-pytorch-2-8-0?id=runpod-torch-v280)
+    - [Docker Hub Image Layer Details](https://hub.docker.com/layers/runpod/pytorch/1.0.2-cu1281-torch280-ubuntu2404/images/sha256-4d1721e62b56d345c83b4fd6090664be6daf9312caab5b2e76f23d8231941851)
 - **PyTorch:** 2.8.0 | **CUDA:** 12.8.1 | **Ubuntu:** 24.04
-- **Size:** ~10-12 GB
+- **Size:** 9.8 GB
 - **Required:** CUDA 12.8 driver on host (see filtering instructions below)
 
 **⚠️ Important:** The Docker image CUDA version (12.8.1) requires CUDA 12.8 drivers on the host. Filter for the matching driver **CUDA 12.8 exactly** when deploying to ensure compatibility.
