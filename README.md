@@ -20,10 +20,34 @@ Follow along with this comprehensive video guide by Trelis Research:
 
 **[▶️ Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)** (29 minutes)
 
-### Step 1: Get API Keys
+### Step 1: Get API Keys & Configure SSH Access
+
+#### API Keys
 
 1. **HuggingFace Token** (REQUIRED) - [Create token with "Write" permissions](https://huggingface.co/settings/tokens)
 2. **Weights & Biases API Key** (RECOMMENDED) - [Get your API key](https://wandb.ai/authorize)
+
+#### SSH Key Setup (Required for Pod Access)
+
+Before deploying, configure SSH access in Runpod:
+
+1. **Generate SSH key pair** on your local machine:
+
+   ```bash
+   # Generate ed25519 key (recommended)
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+
+   # Or generate RSA key (alternative)
+   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+   ```
+
+2. **Add public key to Runpod:**
+   - Go to Runpod Console → **Settings** → **SSH Public Keys**
+   - Click **Add SSH Key**
+   - Paste your public key (from `~/.ssh/id_ed25519.pub` or `~/.ssh/id_rsa.pub`)
+   - Runpod will inject this key into all your pods automatically
+
+**Note:** Without SSH key setup, you won't be able to access your pod's terminal from your local machine. Otherwise, you'd have to use the Web-based terminal on Runpod.
 
 ### Step 2: Deploy & Configure
 
@@ -39,37 +63,24 @@ Or search for `originalzen_nanochat` in Runpod's public templates.
 
 **Template Details:**
 
-- **Docker Image:** `runpod/pytorch:0.7.0-cu1263-torch260-ubuntu2204` ([Docker Hub](https://hub.docker.com/r/runpod/pytorch))
-- **Size:** ~10.6 GB (download time varies by network speed - see troubleshooting below)
+- **Docker Image:** `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404` ([Runpod Template Reference](https://console.runpod.io/hub/template/runpod-pytorch-2-8-0?id=runpod-torch-v280))
+- **PyTorch:** 2.8.0 | **CUDA:** 12.8.1 | **Ubuntu:** 24.04
+- **Size:** ~10-12 GB
+- **Required:** CUDA 12.8 driver on host (see filtering instructions below)
 
-#### Deployment Settings
+**⚠️ Important:** The Docker image CUDA version (12.8.1) requires CUDA 12.8 drivers on the host. Filter for the matching driver **CUDA 12.8 exactly** when deploying to ensure compatibility.
 
-**⚠️ IMPORTANT: Network Speed Optimization**
+#### Deployment Configuration Guide
 
-To avoid unnecessary cost expense on potentially slow internet speed taking longer than an hour to download Docker image + packages:
+Follow these steps carefully to configure your pod for optimal performance and cost efficiency.
 
-1. **Select "Community cloud"** instead of the preselected "Secure cloud"
-   - Community Cloud provides additional filtering options for internet speed
-   - Might improve availability and network speeds in some cases
-   - Consider the trade-offs depending on your needs and use-case
+##### 1. Configure Runpod Secrets (Required First Step)
 
-2. **Filter by Internet Speed:**
-   - Set to **"Extreme (1000 Mb/s or higher)"**
-   - This might reduce download time from > 60 minutes to < 15 minutes
-   - Critical for cost optimization on expensive H100 instances
+Before selecting your pod configuration, set up your API keys as encrypted Secrets:
 
-3. **Region Selection:**
-   - Select **"Any"** to maximize GPU availability
-   - The system will assign you to the nearest available high-speed zone
+![Runpod Secrets Configuration](assets/runpod-00-secrets.png)
 
-4. **GPU Selection:**
-   - **Primary choice:** 8x H100 SXM ($21.52/hour, best performance)
-   - **Alternatives:** 8x H100 PCIe or NVL (similar performance)
-   - Wait for all 8 GPUs to be available (don't settle for 5-6 if you can wait)
-
-**Configure Runpod Secrets (Environment Variables):**
-
-![Runpod Environment Variables](assets/runpod-environment-variables.png)
+**Go to:** Runpod Console → **Secrets** → **Create Secret**
 
 **Required:**
 
@@ -81,12 +92,111 @@ To avoid unnecessary cost expense on potentially slow internet speed taking long
 
 **Optional:**
 
-- `GIT_USERNAME` - Your GitHub username if you forked (defaults to `originalzen`)
-- `GIT_USER_NAME` - Full name for git commits (optional)
-- `GIT_USER_EMAIL` - Email for git commits (optional)
 - `GITHUB_PAT` - Personal access token (only for private forks)
+- `GIT_USERNAME` - Your GitHub username if you forked (defaults to `originalzen`)
+- `GIT_USER_NAME` - Your author name for git commits (optional)
+- `GIT_USER_EMAIL` - Your author email for git commits (optional)
 
-**Cost Estimate:** ~$100 for complete 4-hour training run
+##### 2. Select Cloud Type & Apply Filters
+
+![Runpod Cloud Filters](assets/runpod-01-cloud-filters.png)
+
+**Cloud Selection:**
+
+- **Community Cloud** (recommended for cost optimization)
+    - Provides Internet Speed filtering (critical for fast downloads)
+    - Might lower cost with faster bandwidth at the expense of reliability guarantees
+    - **Trade-off:** Managed by external hosts, not directly controlled by Runpod
+    - **Best for:** Short-term training runs, experimentation, cost-sensitive workloads
+
+- **Secure Cloud** (alternative)
+    - Fully managed by Runpod with greater stability
+    - Better support and quicker issue resolution
+    - Security & compliance filters available
+    - No Internet Speed filtering available
+    - **Best for:** Long-running or mission-critical workloads requiring greater reliability and availability
+
+**Filter Settings (Community Cloud):**
+
+1. **Internet Speed:** Set to **"Extreme - 1000 Mb/s or higher"**
+   - Avoids getting assigned to a node with bandwidth bottlenecking issues
+   - Critical for cost optimization on $20+/hour instances
+
+2. **Region:** Select **"Any"** to maximize availability
+
+3. **Additional Filters → CUDA Version:** Select **ONLY 12.8** ✅
+   - **Why exactly 12.8?** Docker image requires CUDA 12.8.1, which needs CUDA 12.8 drivers on host machine
+   - Older or newer versions may cause initialization failures or compatibility issues
+   - **Rule of thumb:** Docker image CUDA version and host machine CUDA drivers should match for maximum reliability
+
+4. **Additional Filters → Disk Type:** Select **NVME** (if available)
+   - Significantly faster package installation and extraction
+   - Reduces setup time compared to SSD
+
+##### 3. Select GPU Configuration
+
+![H100 Availability](assets/runpod-02-h100-sxm-pcie-nvl-availability.png)
+
+**⚠️ Availability Note:** With strict filters (Community Cloud + Extreme Speed + CUDA 12.8 + NVME):
+
+- **H100 SXM or PCIe** may be unavailable
+- **H100 NVL** may be your only option
+
+**Recommended Selection:**
+
+- **8x H100 NVL** ($20.72 per hour)
+- **8 GPUs required** for optimal training speed (~4 hours targeting the `d20` model)
+
+**Alternative Strategy:** If you need greater availability of SXM, try the Secure Cloud instead at the risk of the aforementioned trade-offs.
+
+##### 4. Configure Deployment Settings
+
+![Deployment Configuration](assets/runpod-03-deployment-config-template-docker-image-gpu-count.png)
+
+**Pod Template:** `originalzen_nanochat` should be preselected if you followed the link:
+
+**🚀 [One-Click Deploy Template](https://console.runpod.io/deploy?template=q3zrjjxw39)**
+
+**GPU Count:** Select **8** GPUs
+
+- Docker image used: `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`
+- Click **"Edit"** to inspect template contents (optional):
+
+![Template Container Start Command](assets/runpod-04-template-container-start-command.png)
+
+**What you'll see when inspecting:**
+
+- **Container Start Command:** Equivalent to `runpod_onstart.sh` script
+- Sets up SSH, installs dependencies, clones repository automatically
+
+![Template Environment Variables](assets/runpod-05-template-env-variables-secrets-ports-workspace-mount-path.png)
+
+- **Environment Variables:** Shows how Secrets are injected (e.g., `{{ RUNPOD_SECRET_HF_TOKEN }}`)
+- **Ports:** HTTP ports 8888, 6006, 8000 exposed for Jupyter/TensorBoard/Web UI
+- **Volume Mount Path:** `/workspace` (where repo will be cloned)
+
+**You can override any settings here if needed:**
+
+- Add optional environment variables (e.g., `GIT_USER_NAME`, `GIT_USER_EMAIL`)
+- Modify disk sizes
+- Change exposed ports
+
+##### 5. Review & Deploy
+
+![Review Specs Before Deployment](assets/runpod-06-review-specs-before-deployment.png)
+
+**Final Checklist:**
+
+- ✅ Secrets configured (HF_TOKEN, WANDB_API_KEY)
+- ✅ SSH key added to Runpod account
+- ✅ CUDA 12.8 filter applied
+- ✅ Community Cloud + Extreme speed selected (or your preferred filters)
+- ✅ 8 GPUs selected (H100 SXM/PCIe/NVL)
+- ✅ Template: `originalzen_nanochat`
+
+**Cost Estimate:** ~$85-110 for complete 4-hour training run (varies by GPU type and other factors)
+
+**Click "Deploy On-Demand"** to start your pod!
 
 ### Step 3: Start Training
 
@@ -195,8 +305,8 @@ Access at: `https://<your-pod-id>-8000.proxy.runpod.net`
 
 | Artifact | Size | Required For | Priority |
 |----------|------|--------------|----------|
-| **SFT checkpoint** | ~2GB | Chat inference | 🔴 CRITICAL |
-| **Tokenizer** | ~1MB | All inference (text encoding/decoding) | 🔴 CRITICAL |
+| **SFT checkpoint** | ~2GB | Chat inference | 🟢 CRITICAL |
+| **Tokenizer** | ~1MB | All inference (text encoding/decoding) | 🟢 CRITICAL |
 | **Report** | ~50KB | Training metrics & benchmarks | 🟡 RECOMMENDED |
 | **Base checkpoint** | ~2GB | Custom fine-tuning, experiments | 🟡 RECOMMENDED |
 | **Mid checkpoint** | ~2GB | Research, stage comparison | 🟡 RECOMMENDED |
@@ -298,37 +408,33 @@ scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/report.md ./
 
 ### Slow Network Speeds / Long Download Times
 
-**Problem:** Docker image (`runpod/pytorch:0.7.0-cu1263-torch260-ubuntu2204`, ~10.6 GB) and package dependencies download taking much longer than expected.
+**Problem:** Docker image and package dependencies download taking much longer than expected (60+ minutes).
 
-**Root Cause:** Assignment to distant availability zones or low-bandwidth nodes during peak traffic hours (e.g., Iceland EUR-IS-3 when you're in US).
+**Root Cause:** Some availability zones might be experiencing extremely limiting bandwidth issues.
 
 **Solution:**
 
-Select the correct cloud type and filters to ensure high-speed network assignment:
+Select the correct cloud type and filters as shown in the deployment guide above:
 
-![Runpod Cloud Filters](assets/runpod-cloud-filters.png)
-
-1. **Use Community Cloud** (not Secure Cloud) - provides Internet Speed filtering
+1. **Use Community Cloud** (provides Internet Speed filtering)
 2. **Filter by "Extreme (1000 Mb/s or higher)"** bandwidth
-3. **Select "Any" region** for maximum availability
-4. **Wait for all 8 GPUs** to be available rather than accepting partial node
+3. **Select NVME Disk Type** (faster package extraction)
+4. **Select "Any" region** for maximum availability
 
 **Expected Performance:**
 
-- ✅ Good: ~15 minutes for Docker image + packages (1000 Mb/s+)
-- ❌ Bad: 60+ minutes (slow zones like some EU locations from US)
+- ✅ Good: ~5 minutes for Docker image + packages (1000 Mb/s+ with NVME)
+- ❌ Bad: 60+ minutes (slow zones or HDD disks)
 
-**Cost Impact:** Slow downloads can waste over $30 in compute time before training even starts!
+**Cost Impact:** Slow downloads can waste $15-40 in compute time before training even starts!
 
-### Missing Environment Variables
+**Trade-offs to Consider:**
 
-**Problem:** Training fails with HuggingFace authentication errors.
+- **Community Cloud + Extreme filters:** Fast speeds but limited GPU availability (often only H100 NVL available)
+- **Secure Cloud (no speed filter):** Better GPU availability but risk of slow network assignment
+- **Community Cloud (no filters):** Most GPU availability but unpredictable network performance
 
-**Solution:**
-
-- Verify `HF_TOKEN` is set in Runpod Secrets (NOT plain environment variables)
-- Token must have "Write" permissions: <https://huggingface.co/settings/tokens>
-- After setting, restart Pod for Secrets to take effect
+Experiment with different filter combinations based on your priorities (speed vs availability vs cost).
 
 ### Screen Session Lost After Disconnect
 
