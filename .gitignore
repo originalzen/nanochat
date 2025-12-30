@@ -20,3 +20,12 @@ temp/
 nanochat-training-logs-reports/
 web-links/
 hf-repo/
+
+# GGUF conversion outputs
+*-gguf/
+*-hf/
+*.gguf
+*.safetensors
+nanochat-d20-hf/
+nanochat-gguf/
+gguf-env/
