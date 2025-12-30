@@ -7,3 +7,6 @@
 
 # Explicitly ensure shell scripts are LF
 *.sh text eol=lf
+
+# Keep our version of the README
+README.md merge=ours
