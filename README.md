@@ -164,14 +164,10 @@ Before selecting your pod configuration, set up your API keys as encrypted Secre
 - Docker image used: `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`
 - Click **"Edit"** to inspect template contents (optional):
 
-![Template Container Start Command](assets/runpod-04-template-container-start-command.png)
-
 **What you'll see when inspecting:**
 
 - **Container Start Command:** Equivalent to `runpod_onstart.sh` script
 - Sets up SSH, installs dependencies, clones repository automatically
-
-![Template Environment Variables](assets/runpod-05-template-env-variables-secrets-ports-workspace-mount-path.png)
 
 - **Environment Variables:** Shows how Secrets are injected (e.g., `{{ RUNPOD_SECRET_HF_TOKEN }}`)
 - **Ports:** HTTP ports 8888, 6006, 8000 exposed for Jupyter/TensorBoard/Web UI
@@ -182,6 +178,8 @@ Before selecting your pod configuration, set up your API keys as encrypted Secre
 - Add optional environment variables (e.g., `GIT_USER_NAME`, `GIT_USER_EMAIL`)
 - Modify disk sizes
 - Change exposed ports
+
+![Template Environment Variables](assets/runpod-05-template-env-variables-secrets-ports-workspace-mount-path.png)
 
 ##### 5. Review & Deploy
 
@@ -772,9 +770,10 @@ python -m pytest tests/test_rustbpe.py -v -s
 - Report bugs or request features at [karpathy/nanochat](https://github.com/karpathy/nanochat)
 - This fork regularly pulls upstream changes
 
-**LLM Policy (Disclosure):**  
-When submitting PRs, declare any parts with substantial LLM contribution you haven't fully verified.  
-*This fork is developed with LLM assistance.*
+**LLM Policy (Disclosure):**
+When submitting PRs to karpathy/nanochat, declare any parts with substantial LLM contribution you haven't fully verified.
+
+*This fork itself is developed with the assistance of LLMs!*
 
 ---
 
