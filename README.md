@@ -8,7 +8,7 @@
 
 ## Quick Start: Train Your Own LLM in 4 Hours
 
-**Cost:** ~$100 | **Time:** ~4 hours | **Result:** 500M parameter GPT-2 level chatbot
+**Cost:** ~$100 | **Time:** ~4 hours | **Result:** 561M parameter GPT-2 level chatbot
 
 ### Watch Tutorial (Recommended)
 
