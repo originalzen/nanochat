@@ -6,500 +6,71 @@
 
 ---
 
-## Quick Start: Train Your Own LLM in 4 Hours
+## 🚀 Quick Start
+
+**Ready to train your own LLM?** Choose your deployment platform:
+
+### Runpod Cloud GPUs (Recommended for Beginners)
+
+**📘 [Complete Runpod Quickstart Guide](README_QUICKSTART_RUNPOD.md)**
 
 **Cost:** ~$100 | **Time:** ~4 hours | **Result:** 561M parameter GPT-2 level chatbot
 
-### Watch Tutorial (Recommended)
+Comprehensive step-by-step guide with:
 
-Follow along with this comprehensive video guide by Trelis Research:
+- Visual deployment walkthrough with screenshots
+- Optimal configuration settings for cost efficiency
+- Complete troubleshooting guide
+- End-to-end workflow from setup to model backup
 
-<a href="https://www.youtube.com/watch?v=qra052AchPE">
-  <img src="https://img.youtube.com/vi/qra052AchPE/maxresdefault.jpg" alt="Train an LLM from Scratch with Karpathy's Nanochat" width="400">
-</a>
+**[▶️ Video Tutorial (29 min)](https://www.youtube.com/watch?v=qra052AchPE)** | **[🚀 One-Click Deploy](https://console.runpod.io/deploy?template=q3zrjjxw39)**
 
-**[▶️ Train an LLM from Scratch with Karpathy's Nanochat](https://www.youtube.com/watch?v=qra052AchPE)** (29 minutes)
+### Other Cloud Providers
 
-### Step 1: Get API Keys & Configure SSH Access
+For AWS, Lambda Labs, or other GPU cloud providers:
 
-#### API Keys
+- Follow general deployment steps below
+- Adapt environment setup for your platform
+- See [Advanced Usage](#advanced-usage) for configuration details
 
-1. **HuggingFace Token** (REQUIRED) - [Create token with "Write" permissions](https://huggingface.co/settings/tokens)
-2. **Weights & Biases API Key** (RECOMMENDED) - [Get your API key](https://wandb.ai/authorize)
-
-#### SSH Key Setup (Required for Pod Access)
-
-Before deploying, configure SSH access in Runpod:
-
-1. **Generate SSH key pair** on your local machine:
-
-   ```bash
-   # Generate ed25519 key (recommended)
-   ssh-keygen -t ed25519 -C "your_email@example.com"
-
-   # Or generate RSA key (alternative)
-   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
-   ```
-
-2. **Add public key to Runpod:**
-   - Go to Runpod Console → **Settings** → **SSH Public Keys**
-   - Click **Add SSH Key**
-   - Paste your public key (from `~/.ssh/id_ed25519.pub` or `~/.ssh/id_rsa.pub`)
-   - Runpod will inject this key into all your pods automatically
-
-**Note:** Without SSH key setup, you won't be able to access your pod's terminal from your local machine. Otherwise, you'd have to use the Web-based terminal on Runpod.
-
-### Step 2: Deploy & Configure
-
-**Deploy 8x H100 pod on [Runpod](https://runpod.io):**
-
-#### Quick Deploy (Recommended)
-
-Use the pre-configured template with `runpod_onstart.sh` already set up:
-
-**🚀 [One-Click Deploy Template](https://console.runpod.io/deploy?template=q3zrjjxw39)**
-
-Or search for `originalzen_nanochat` in Runpod's public templates.
-
-**Template Details:**
-
-- **Docker Image:** `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`
-    - [Runpod Template Reference](https://console.runpod.io/hub/template/runpod-pytorch-2-8-0?id=runpod-torch-v280)
-    - [Docker Hub Image Layer Details](https://hub.docker.com/layers/runpod/pytorch/1.0.2-cu1281-torch280-ubuntu2404/images/sha256-4d1721e62b56d345c83b4fd6090664be6daf9312caab5b2e76f23d8231941851)
-- **PyTorch:** 2.8.0 | **CUDA:** 12.8.1 | **Ubuntu:** 24.04
-- **Size:** 9.8 GB
-- **Required:** CUDA 12.8 driver on host (see filtering instructions below)
-
-**⚠️ Important:** The Docker image CUDA version (12.8.1) requires CUDA 12.8 drivers on the host. Filter for the matching driver **CUDA 12.8 exactly** when deploying to ensure compatibility.
-
-#### Deployment Configuration Guide
-
-Follow these steps carefully to configure your pod for optimal performance and cost efficiency.
-
-##### 1. Configure Runpod Secrets (Required First Step)
-
-Before selecting your pod configuration, set up your API keys as encrypted Secrets:
-
-![Runpod Secrets Configuration](assets/runpod-00-secrets.png)
-
-**Go to:** Runpod Console → **Secrets** → **Create Secret**
-
-**Required:**
-
-- `HF_TOKEN` - Your HuggingFace token with "Write" permissions ([get token](https://huggingface.co/settings/tokens))
-
-**Recommended:**
-
-- `WANDB_API_KEY` - Your W&B key for training dashboards ([get key](https://wandb.ai/authorize))
-
-**Optional:**
-
-- `GITHUB_PAT` - Personal access token (only for private forks)
-- `GIT_USERNAME` - Your GitHub username if you forked (defaults to `originalzen`)
-- `GIT_USER_NAME` - Your author name for git commits (optional)
-- `GIT_USER_EMAIL` - Your author email for git commits (optional)
-
-##### 2. Select Cloud Type & Apply Filters
-
-![Runpod Cloud Filters](assets/runpod-01-cloud-filters.png)
-
-**Cloud Selection:**
-
-- **Community Cloud** (recommended for cost optimization)
-    - Provides Internet Speed filtering (critical for fast downloads)
-    - Might lower cost with faster bandwidth at the expense of reliability guarantees
-    - **Trade-off:** Managed by external hosts, not directly controlled by Runpod
-    - **Best for:** Short-term training runs, experimentation, cost-sensitive workloads
-
-- **Secure Cloud** (alternative)
-    - Fully managed by Runpod with greater stability
-    - Better support and quicker issue resolution
-    - Security & compliance filters available
-    - No Internet Speed filtering available
-    - **Best for:** Long-running or mission-critical workloads requiring greater reliability and availability
-
-**Filter Settings (Community Cloud):**
-
-1. **Internet Speed:** Set to **"Extreme - 1000 Mb/s or higher"**
-   - Avoids getting assigned to a node with bandwidth bottlenecking issues
-   - Critical for cost optimization on $20+/hour instances
-
-2. **Region:** Select **"Any"** to maximize availability
-
-3. **Additional Filters → CUDA Version:** Select **ONLY 12.8** ✅
-   - **Why exactly 12.8?** Docker image requires CUDA 12.8.1, which needs CUDA 12.8 drivers on host machine
-   - Older or newer versions may cause initialization failures or compatibility issues
-   - **Rule of thumb:** Docker image CUDA version and host machine CUDA drivers should match for maximum reliability
-
-4. **Additional Filters → Disk Type:** Select **NVME** (if available)
-   - Significantly faster package installation and extraction
-   - Reduces setup time compared to SSD
-
-##### 3. Select GPU Configuration
-
-![H100 Availability](assets/runpod-02-h100-sxm-pcie-nvl-availability.png)
-
-**⚠️ Availability Note:** With strict filters (Community Cloud + Extreme Speed + CUDA 12.8 + NVME):
-
-- **H100 SXM or PCIe** may be unavailable
-- **H100 NVL** may be your only option
-
-**Recommended Selection:**
-
-- **8x H100 NVL** ($20.72 per hour)
-- **8 GPUs required** for optimal training speed (~4 hours targeting the `d20` model)
-
-**Alternative Strategy:** If you need greater availability of SXM, try the Secure Cloud instead at the risk of the aforementioned trade-offs.
-
-##### 4. Configure Deployment Settings
-
-![Deployment Configuration](assets/runpod-03-deployment-config-template-docker-image-gpu-count.png)
-
-**Pod Template:** `originalzen_nanochat` should be preselected if you followed the link:
-
-**🚀 [One-Click Deploy Template](https://console.runpod.io/deploy?template=q3zrjjxw39)**
-
-**GPU Count:** Select **8** GPUs
-
-- Docker image used: `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`
-- Click **"Edit"** to inspect template contents (optional):
-
-**What you'll see when inspecting:**
-
-- **Container Start Command:** Equivalent to `runpod_onstart.sh` script
-- Sets up SSH, installs dependencies, clones repository automatically
-
-- **Environment Variables:** Shows how Secrets are injected (e.g., `{{ RUNPOD_SECRET_HF_TOKEN }}`)
-- **Ports:** HTTP ports 8888, 6006, 8000 exposed for Jupyter/TensorBoard/Web UI
-- **Volume Mount Path:** `/workspace` (where repo will be cloned)
-
-**You can override any settings here if needed:**
-
-- Add optional environment variables (e.g., `GIT_USER_NAME`, `GIT_USER_EMAIL`)
-- Modify disk sizes
-- Change exposed ports
-
-![Template Environment Variables](assets/runpod-05-template-env-variables-secrets-ports-workspace-mount-path.png)
-
-##### 5. Review & Deploy
-
-![Review Specs Before Deployment](assets/runpod-06-review-specs-before-deployment.png)
-
-**Final Checklist:**
-
-- ✅ Secrets configured (HF_TOKEN, WANDB_API_KEY)
-- ✅ SSH key added to Runpod account
-- ✅ CUDA 12.8 filter applied
-- ✅ Community Cloud + Extreme speed selected (or your preferred filters)
-- ✅ 8 GPUs selected (H100 SXM/PCIe/NVL)
-- ✅ Template: `originalzen_nanochat`
-
-**Cost Estimate:** ~$85-110 for complete 4-hour training run (varies by GPU type and other factors)
-
-**Click "Deploy On-Demand"** to start your pod!
-
-### Step 3: Start Training
-
-**Two deployment options:**
-
-#### Option A: Using Pre-Configured Template (Recommended)
-
-**If you used the one-click deploy template:**
-
-The template automatically handles: cloning repo, installing dependencies (`screen`, `git`, etc.), setting up environment variables.
-
-**SSH into pod and run:**
-
-```bash
-# Repository already cloned to /workspace/nanochat by template
-cd /workspace/nanochat
-
-# Set your run name for `wandb` and start training in a persistent screen session
-export WANDB_RUN=nanochat_d20
-screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
-```
-
-**Note:** The video tutorial shows manual `git clone` and `apt-get install screen` commands, but these are **already done** by the template. Just set `WANDB_RUN` and launch `speedrun.sh`!
-
-#### Option B: Manual Deployment (No Template)
-
-**If you're deploying without the template:**
-
-```bash
-# SSH into pod and run:
-cd /workspace
-git clone https://github.com/originalzen/nanochat.git
-cd nanochat
-
-# Install screen for session persistence
-apt-get update && apt-get install -y screen
-
-# Set run name and start training
-export WANDB_RUN=nanochat_d20
-screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
-```
-
-**Using your own fork?** Replace `originalzen` with your GitHub username in clone command.
-
-#### Managing Your Training Session
-
-**Screen Commands (Essential):**
-
-```bash
-# Detach from screen session (keeps training running)
-# Press: Ctrl+A, then D
-
-# Reattach to running session (reconnect after disconnect)
-screen -r speedrun
-
-# List all screen sessions
-screen -ls
-
-# Monitor training progress (live log tail)
-tail -f speedrun.log
-
-# Monitor with auto-scroll (follows output)
-tail -f speedrun.log -n 100
-```
-
-**Monitoring Progress:**
-
-- **W&B Dashboard:** [wandb.ai](https://wandb.ai) - Real-time metrics, loss curves, FLOPS (if WANDB_API_KEY set)
-- **Local Logs:** `tail -f speedrun.log` - Full training output
-- **Expected Duration:** ~4 hours for complete training
-- **Cost Tracking:** Monitor in Runpod console (target: < $100)
-
-**Training Phases:**
-
-1. **Tokenizer Training** - BPE vocabulary generation
-2. **Base Pre-training** - 10B tokens from FineWeb Edu
-3. **Mid-training** - Chat data and tool use
-4. **Supervised Fine-tuning** - Instruction following
-5. **Evaluation** - MMLU, GSM8K, HumanEval benchmarks
-
-**What to Watch For:**
-
-- FLOPS utilization should be > 40% in first 10 minutes (confirms GPU efficiency)
-- Loss should decrease steadily during training
-- No CUDA out-of-memory errors (if occurs, terminate and adjust `device_batch_size`)
-
-### Step 4: Test Your Model (5 minutes)
-
-**After training completes:**
-
-```bash
-source .venv/bin/activate
-export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
-python -m scripts.chat_web
-```
-
-Access at: `https://<your-pod-id>-8000.proxy.runpod.net`
-
-**Test prompts:** "What is the capital of France?", "Tell me a joke", "Why is the sky blue?"
-
-### Step 5: Backup Checkpoints (10-20 minutes)
-
-**⚠️ CRITICAL: Backup BEFORE terminating pod!** All data is lost forever when pod terminates.
-
-**What gets generated (total ~8GB):**
-
-| Artifact | Size | Required For | Priority |
-|----------|------|--------------|----------|
-| **SFT checkpoint** | ~2GB | Chat inference | 🟢 CRITICAL |
-| **Tokenizer** | ~1MB | All inference (text encoding/decoding) | 🟢 CRITICAL |
-| **Report** | ~50KB | Training metrics & benchmarks | 🟡 RECOMMENDED |
-| **Base checkpoint** | ~2GB | Custom fine-tuning, experiments | 🟡 RECOMMENDED |
-| **Mid checkpoint** | ~2GB | Research, stage comparison | 🟡 RECOMMENDED |
-| **Training logs** | ~10MB | speedrun.log (debugging, learning) | ⚪ OPTIONAL |
-
-**Complete backup (RECOMMENDED - backs up ALL artifacts):**
-
-```bash
-source .venv/bin/activate
-export NANOCHAT_BASE_DIR="$HOME/.cache/nanochat"
-
-# Replace YourUsername/my-nanochat with your HuggingFace repo
-
-# Critical (SFT + tokenizer + report)
-python -m scripts.push_to_hf --stage sft --repo-id YourUsername/my-nanochat --path-in-repo sft/d20
-python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
-python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/report" --repo-id YourUsername/my-nanochat --path-in-repo report/latest
-
-# Optional but recommended (base + mid for future experiments)
-python -m scripts.push_to_hf --stage base --repo-id YourUsername/my-nanochat --path-in-repo base/d20
-python -m scripts.push_to_hf --stage mid --repo-id YourUsername/my-nanochat --path-in-repo mid/d20
-```
-
-**Minimum backup (time-constrained, ~5 minutes):**
-
-```bash
-# Just SFT + tokenizer (~2GB)
-python -m scripts.push_to_hf --stage sft --repo-id YourUsername/my-nanochat --path-in-repo sft/d20
-python -m scripts.push_to_hf --model-dir "$NANOCHAT_BASE_DIR/tokenizer" --repo-id YourUsername/my-nanochat --path-in-repo tokenizer/latest
-```
-
-**Verify HuggingFace uploads:** Visit `https://huggingface.co/YourUsername/my-nanochat` to confirm all folders exist
-
-#### Download Training Logs (Local Backup)
-
-**⚠️ Do NOT upload logs to HuggingFace** (may contain sensitive info like directory paths, usernames)
-
-**Download to your local machine:**
-
-**Option 1: SCP (Command Line)**
-
-```bash
-# On your local machine (PowerShell, WSL, or Mac/Linux terminal)
-# Get SSH details from Runpod pod → Connect → SSH
-
-# Download speedrun.log
-scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/speedrun.log ./
-
-# Download report.md (if not uploaded to HF)
-scp -P 22 root@<pod-id>.proxy.runpod.net:/workspace/nanochat/report.md ./
-```
-
-**Option 2: WinSCP (GUI, Windows)**
-
-1. Download [WinSCP](https://winscp.net/)
-2. Connect using SSH details from Runpod
-   - Host: `<pod-id>.proxy.runpod.net`
-   - Port: `22`
-   - Username: `root`
-3. Navigate to `/workspace/nanochat/`
-4. Drag `speedrun.log` to your local machine
-
-**What logs contain:**
-
-- Full training output (loss curves, FLOPS, validation metrics)
-- Tokenizer training details
-- Evaluation results at each stage
-- Timing information
-
-**Security note:** Review logs before sharing publicly - they may contain:
-
-- Directory paths (usually benign)
-- Environment variable names (no values, safe)
-- No API tokens (tokens are never printed to logs)
-
-**Note:** HuggingFace storage is FREE for public models. Back up checkpoints there, logs locally!
-
-### Step 6: Terminate Pod
-
-**Before terminating, ensure backups complete:**
-
-- [x] HuggingFace uploads verified (visit your HF repo)
-- [x] Training logs downloaded to local machine (optional)
-- [x] Report.md reviewed and saved
-
-**Then:** Terminate pod in Runpod console → Billing stops immediately
-
-**Why backup all checkpoints?**
-
-- **Future experiments:** Base/Mid checkpoints enable custom fine-tuning without re-training
-- **Resume training:** Checkpoints include optimizer states for continuation (e.g., monthly $100 runs)
-- **Research:** Compare different training stages
-- **Educational:** Logs show full training progression for learning
-- **Free storage:** No cost to keep checkpoints on HuggingFace (logs stored locally)
+**Platform requirements:** 8x H100 (or 8x A100 80GB) GPUs, CUDA 12.8+, Ubuntu 22.04+
 
 ---
 
-## Common Deployment Issues & Solutions
+## Table of Contents
 
-### Slow Network Speeds / Long Download Times
-
-**Problem:** Docker image and package dependencies download taking much longer than expected (60+ minutes).
-
-**Root Cause:** Some availability zones might be experiencing extremely limiting bandwidth issues.
-
-**Solution:**
-
-Select the correct cloud type and filters as shown in the deployment guide above:
-
-1. **Use Community Cloud** (provides Internet Speed filtering)
-2. **Filter by "Extreme (1000 Mb/s or higher)"** bandwidth
-3. **Select NVME Disk Type** (faster package extraction)
-4. **Select "Any" region** for maximum availability
-
-**Expected Performance:**
-
-- ✅ Good: ~5 minutes for Docker image + packages (1000 Mb/s+ with NVME)
-- ❌ Bad: 60+ minutes (slow zones or HDD disks)
-
-**Cost Impact:** Slow downloads can waste $15-40 in compute time before training even starts!
-
-**Trade-offs to Consider:**
-
-- **Community Cloud + Extreme filters:** Fast speeds but limited GPU availability (often only H100 NVL available)
-- **Secure Cloud (no speed filter):** Better GPU availability but risk of slow network assignment
-- **Community Cloud (no filters):** Most GPU availability but unpredictable network performance
-
-Experiment with different filter combinations based on your priorities (speed vs availability vs cost).
-
-### Screen Session Lost After Disconnect
-
-**Problem:** SSH disconnected and can't see training output.
-
-**Solution:**
-
-```bash
-# Reconnect to your running session
-screen -r speedrun
-
-# If that fails, list all sessions
-screen -ls
-
-# Then reconnect to specific session
-screen -r <session-id>
-```
-
-The template uses `-L -Logfile speedrun.log` which saves everything to file, so even if screen is lost, you can review `speedrun.log`.
-
-### Out of Memory Errors
-
-**Problem:** CUDA out of memory during training.
-
-**Solution:**
-
-Edit training scripts to reduce `--device_batch_size`:
-
-```bash
-# In speedrun.sh, modify the torchrun commands:
-# Change --device_batch_size=32 to 16, 8, 4, or 2
-# Example:
-torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- --device_batch_size=16
-```
-
-Scripts automatically compensate with gradient accumulation, so final results are identical.
+- **[Quick Start](#-quick-start)** - Choose your deployment platform
+- **[General Deployment Requirements](#general-deployment-requirements)** - Platform-agnostic prerequisites
+- **[About nanochat](#about-nanochat)** - What this project is and does
+- **[Training Results](#training-results)** - Expected metrics and benchmarks
+- **[Advanced Usage](#advanced-usage)** - Bigger models, customization, pre-trained checkpoints
+- **[Fork & Sync](#fork--sync)** - How to fork and stay updated
+- **[File Structure](#file-structure)** - Repository organization
+- **[Community & Support](#questions--community)** - Where to get help
+- **[Contributing](#contributing)** - How to contribute
+- **[Credits](#credits--attribution)** - Acknowledgements
 
 ---
 
-## Fork Information
+## General Deployment Requirements
 
-This fork integrates convenience enhancements from [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat) into the upstream [karpathy/nanochat](https://github.com/karpathy/nanochat) codebase.
+**For any cloud platform:**
 
-**Maintained by:** [@originalzen](https://github.com/originalzen)
+- **GPUs:** 8x H100 (SXM/PCIe/NVL) or 8x A100 80GB
+- **CUDA:** 12.8+ (for PyTorch 2.8.0 compatibility)
+- **OS:** Ubuntu 22.04+ or similar Linux distribution
+- **Disk:** 300GB+ recommended (for datasets, checkpoints, logs)
+- **Network:** High-speed internet (1000 Mb/s+) recommended for faster setup
 
-### What's Added
+**Required API keys:**
 
-**Base:** Latest karpathy/nanochat code
+- [HuggingFace Token](https://huggingface.co/settings/tokens) with "Write" permissions (REQUIRED)
+- [Weights & Biases API Key](https://wandb.ai/authorize) (RECOMMENDED for monitoring)
 
-**Enhancements from TrelisResearch:**
+**Platform-specific guides:**
 
-- `scripts/push_to_hf.py` - Upload checkpoints to HuggingFace Hub
-- `scripts/pull_from_hf.py` - Download checkpoints from HuggingFace Hub
-- `runpod_onstart.sh` - My adaptation of the Runpod Container Start Command
-- `hf-transfer` + `huggingface-hub` dependencies
-
-### Why This Fork Exists
-
-TrelisResearch added excellent Runpod integration and HuggingFace utilities, but was missing some upstream bug fixes from Karpathy. This fork merges the best of both:
-
-- Latest updates and bug fixes from Karpathy upstream
-- Convenience scripts from TrelisResearch (Runpod automation, W&B integration, HF backup workflow)
-- Regular upstream sync to stay current
-
-This fork also serves as a learning tool for git workflows, ML/LLM training, and experimentation. Thanks to Andrej Karpathy for making nanochat accessible to everyone, and to Ronan K. McGovern at Trelis Research for the tutorial and scripts.
+- **Runpod:** See [Runpod Quickstart Guide](README_QUICKSTART_RUNPOD.md)
+- **AWS/Lambda Labs/Others:** Follow advanced usage instructions below
 
 ---
 
@@ -669,6 +240,40 @@ git push origin master
 
 ---
 
+## Fork Information
+
+This fork integrates convenience enhancements from [TrelisResearch/nanochat](https://github.com/TrelisResearch/nanochat) into the upstream [karpathy/nanochat](https://github.com/karpathy/nanochat) codebase.
+
+**Maintained by:** [@originalzen](https://github.com/originalzen)
+
+### What's Added
+
+**Base:** Latest karpathy/nanochat code
+
+**Enhancements from TrelisResearch:**
+
+- `scripts/push_to_hf.py` - Upload checkpoints to HuggingFace Hub
+- `scripts/pull_from_hf.py` - Download checkpoints from HuggingFace Hub
+- `runpod_onstart.sh` - Automated Runpod Container Start Command
+- `hf-transfer` + `huggingface-hub` dependencies
+
+**Deployment Guides:**
+
+- [Runpod Quickstart](README_QUICKSTART_RUNPOD.md) - Complete step-by-step deployment guide with visual walkthrough
+
+### Why This Fork Exists
+
+TrelisResearch added excellent Runpod integration and HuggingFace utilities, but was missing some upstream bug fixes from Karpathy. This fork merges the best of both:
+
+- Latest updates and bug fixes from Karpathy upstream
+- Convenience scripts from TrelisResearch (Runpod automation, W&B integration, HF backup workflow)
+- Comprehensive deployment documentation with troubleshooting
+- Regular upstream sync to stay current
+
+This fork also serves as a learning tool for git workflows, ML/LLM training, and experimentation. Thanks to Andrej Karpathy for making nanochat accessible to everyone, and to Ronan K. McGovern at Trelis Research for the tutorial and scripts.
+
+---
+
 ## File Structure
 
 ```tree
@@ -793,11 +398,12 @@ When submitting PRs to karpathy/nanochat, declare any parts with substantial LLM
     - [YouTube Tutorial](https://www.youtube.com/watch?v=qra052AchPE) (29 min)
     - [Trelis Runpod Template](https://console.runpod.io/deploy?template=ikas3s2cii) (original, affiliate link)
 
-**Fork Integration:**
+**Fork Integration & Deployment Guides:**
 
 - **originalzen** (@originalzen) - Merged karpathy + TrelisResearch with deployment optimizations
     - Repository: [originalzen/nanochat](https://github.com/originalzen/nanochat)
-    - [originalzen Runpod Template](https://console.runpod.io/deploy?template=q3zrjjxw39)
+    - [Runpod Quickstart Guide](README_QUICKSTART_RUNPOD.md) - Complete deployment documentation
+    - [Runpod Template](https://console.runpod.io/deploy?template=q3zrjjxw39) - One-click deploy
 
 ### Acknowledgements (from upstream)
 
