@@ -78,21 +78,21 @@ For AWS, Lambda Labs, or other GPU cloud providers:
 
 This repo is a full-stack implementation of an LLM like ChatGPT in a single, clean, minimal, hackable, dependency-lite codebase. nanochat is designed to run on a single 8x H100 node via scripts like [speedrun.sh](speedrun.sh), running the entire pipeline start to end: tokenization, pretraining, finetuning, evaluation, inference, and web serving. nanochat will become the capstone project of the course **LLM101n** being developed by [Eureka Labs](https://eurekalabs.ai).
 
-**Talk to it:** You can try [nanochat d32](https://github.com/karpathy/nanochat/discussions/8) hosted at [nanochat.karpathy.ai](https://nanochat.karpathy.ai/). This 1.9B parameter model was trained for ~$800 (33 hours on 8x H100). While it outperforms GPT-2, it falls short of modern LLMs. These micro models make mistakes, hallucinate, and act childlike - but they're fully yours to configure, tweak, and hack.
+**Talk to it:** Try [nanochat d34](https://github.com/karpathy/nanochat/discussions/314) at [nanochat.karpathy.ai](https://nanochat.karpathy.ai/). This 2.2B parameter model cost ~$2,500 to train (100 hours on 8x H100), using [run1000.sh](run1000.sh) configured for extended training (`--target_param_data_ratio=40`) across 88 billion tokens -- double the Chinchilla-optimal duration. It beats GPT-2 but can't match frontier LLMs. These micro models hallucinate, make mistakes, and behave childishly, but they're entirely open to configure, tweak, and hack.
 
 ---
 
 ## Training Results
 
-Expected metrics for speedrun (d20 model, ~500M parameters):
+Expected metrics for speedrun (d20 model, ~561M parameters, ~$100 tier):
 
-| Metric | BASE | MID | SFT |
-|--------|------|-----|-----|
-| CORE | ~0.22 | - | - |
-| ARC-Easy | - | ~0.36 | ~0.39 |
-| GSM8K | - | ~0.03 | ~0.05 |
-| HumanEval | - | ~0.07 | ~0.09 |
-| MMLU | - | ~0.31 | ~0.32 |
+| Metric     | BASE  | MID   | SFT   |
+| ---------- | ----- | ----- | ----- |
+| CORE       | ~0.22 | -     | -     |
+| ARC-Easy   | -     | ~0.36 | ~0.39 |
+| GSM8K      | -     | ~0.03 | ~0.05 |
+| HumanEval  | -     | ~0.07 | ~0.09 |
+| MMLU       | -     | ~0.31 | ~0.32 |
 
 **Training time:** ~3h 47m | View full report: `cat report.md` after training
 
@@ -131,7 +131,7 @@ torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- --depth=26 --d
 torchrun --standalone --nproc_per_node=8 -m scripts.mid_train -- --device_batch_size=16
 ```
 
-**~$1000 tier (d32, 41 hours):** 1.9B parameters (like demo at nanochat.karpathy.ai)
+**~$1000 tier (d32, 33 hours):** 1.9B parameters
 
 ### GPU Options & Memory Management
 
